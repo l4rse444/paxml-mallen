@@ -1,0 +1,8 @@
+# Real personal data must never be committed.
+*.tsv
+*.csv
+*.xml
+hibob/
+private/
+node_modules/
+!tests/paxml.xsd

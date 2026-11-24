@@ -1,0 +1,612 @@
+<title>PAXml-mallen v4</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working column, three stacked stages (paste, fix, check and save); wide table scrolls inside its own box. */
+:root{
+  --bg:#f2f2f6; --surface:#ffffff; --fg:#282425; --muted:#6a5e5b; --line:#dcdce4;
+  --accent:#8d0601; --accent-fg:#ffffff; --accent-soft:#ffdcd9; --cta:#f26961; --cta-fg:#282425;
+  --err:#a8261d; --err-soft:#fde4e1; --warn:#7a4f00; --warn-soft:#fbf0d9; --ok:#243860; --ok-soft:#e4f0f9;
+  --font:'Sora',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1b1819; --surface:#282425; --fg:#faf4ec; --muted:#c4b8b4; --line:#4a4244;
+  --accent:#f58e87; --accent-fg:#282425; --accent-soft:#3a2523; --cta:#f26961; --cta-fg:#282425;
+  --err:#ff9b92; --err-soft:#3a1f1c; --warn:#f0c46a; --warn-soft:#38301a; --ok:#abd1ea; --ok-soft:#1f2c40; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1b1819; --surface:#282425; --fg:#faf4ec; --muted:#c4b8b4; --line:#4a4244;
+  --accent:#f58e87; --accent-fg:#282425; --accent-soft:#3a2523; --cta:#f26961; --cta-fg:#282425;
+  --err:#ff9b92; --err-soft:#3a1f1c; --warn:#f0c46a; --warn-soft:#38301a; --ok:#abd1ea; --ok-soft:#1f2c40; color-scheme:dark}
+*{box-sizing:border-box}
+.issue.group{align-items:flex-start}
+.issue .gact{display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.issue details{margin-top:8px}.issue summary{cursor:pointer;font-size:13px;color:var(--accent)}
+.gl{margin:6px 0 0;padding-left:18px;font-size:13px;max-height:220px;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.gl button.link{padding:2px 0;font-size:13px}
+.mapline{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:8px;max-width:520px}
+.mapline select,#impDate{font:inherit;font-size:14px;min-height:38px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);padding:4px 8px}
+
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);padding-block:0 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:18px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand b{font-size:19px;font-weight:600;letter-spacing:-.01em}
+.pill{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted);background:var(--surface)}
+.pill.test{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--fg);font:inherit;font-size:13px;padding:7px 12px;min-height:36px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.step{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 14px;color:var(--muted);min-width:0}
+.step strong{display:block;color:var(--fg);font-weight:600;font-size:14px}
+.step small{font-size:12px}
+.step.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.step.done strong{color:var(--ok)}
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-.005em;text-wrap:balance}
+p{margin:0}
+.muted{color:var(--muted)}
+.note{border:1px solid var(--warn);background:var(--warn-soft);color:var(--fg);border-radius:6px;padding:10px 14px;font-size:14px}
+textarea#paste{width:100%;min-height:150px;resize:vertical;font:13px/1.4 var(--mono);color:var(--fg);background:var(--bg);border:1px dashed var(--muted);border-radius:6px;padding:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.btn{font:inherit;font-weight:500;min-height:42px;padding:8px 16px;border-radius:6px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);cursor:pointer}
+button.btn.primary{background:var(--cta);border-color:var(--cta);color:var(--cta-fg);font-weight:600}
+button.btn:disabled{border-color:var(--line);background:var(--bg);color:var(--muted);cursor:not-allowed}
+button.link{font:inherit;font-size:13px;background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;padding:6px 0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.banner{border:1px solid var(--line);border-left-width:5px;border-radius:6px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
+.banner.bad{border-left-color:var(--err);background:var(--err-soft)}
+.banner.good{border-left-color:var(--ok);background:var(--ok-soft)}
+.banner b{font-size:16px;font-weight:600}
+.issues{display:flex;flex-direction:column;gap:8px}
+.issue{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--line);border-left-width:5px;border-radius:6px;padding:10px 14px;font-size:14px}
+.issue.err{border-left-color:var(--err);background:var(--err-soft)}
+.issue.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.issue .txt{min-width:0;flex:1 1 320px}
+.tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;border:1px solid currentColor;border-radius:3px;padding:0 6px;margin-right:8px}
+.err .tag{color:var(--err)}.warn .tag{color:var(--warn)}
+.issue label{display:flex;align-items:center;gap:8px;min-height:36px;white-space:nowrap}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:6px;max-height:560px;overflow-y:auto}
+table{border-collapse:collapse;font-size:13px;width:max-content;min-width:100%}
+th{position:sticky;top:0;background:var(--accent-soft);text-align:left;font-weight:600;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}
+td{padding:4px 6px;border-top:1px solid var(--line);vertical-align:top}
+tr.out td{opacity:.5}
+td input[type=text]{width:100%;font:13px var(--mono);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:5px 6px;min-height:32px}
+td input.err{border:2px solid var(--err);background:var(--err-soft)}
+td input.warn{border:2px dashed var(--warn);background:var(--warn-soft)}
+td .norm{font:11px var(--mono);color:var(--muted);padding:2px 2px 0;white-space:nowrap}
+td.st{font-size:12px;white-space:nowrap;min-width:150px}
+td.st .e{color:var(--err);font-weight:600}td.st .w{color:var(--warn);font-weight:600}td.st .o{color:var(--ok)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{border:1px solid var(--line);border-radius:6px;padding:10px 14px;background:var(--bg)}
+.tile.key{border:2px solid var(--fg)}
+.tile b{display:block;font:500 24px var(--mono);font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;color:var(--muted)}
+.confirm{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:6px;padding:12px 14px;background:var(--bg)}
+.confirm input{margin-top:4px}
+.locked{opacity:.55}
+details summary{cursor:pointer;font-size:13px;color:var(--accent)}
+textarea#xmlout{width:100%;height:220px;margin-top:8px;font:12px/1.4 var(--mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px}
+.toast{font-size:13px;min-height:20px}
+footer{font-size:12px;color:var(--muted)}
+@media (max-width:640px){.steps{grid-template-columns:1fr}.step small{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><b>PAXml-mallen</b><span class="pill test" id="pillTest"></span><span class="pill" id="pillTarget"></span></div>
+    <div class="tools">
+      <span id="offline"></span>
+      <div class="seg" role="group" aria-label="Språk / Language">
+        <button type="button" id="lsv" aria-pressed="true">SV</button><button type="button" id="len" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="steps" id="steps"></div>
+
+  <section class="card" id="secA">
+    <h2 id="hA"></h2>
+    <div class="note" id="noteTest"></div>
+    <label for="paste" id="lblPaste" style="font-weight:600"></label>
+    <textarea id="paste" spellcheck="false"></textarea>
+    <div class="row">
+      <button type="button" class="btn primary" id="bCheck"></button>
+      <button type="button" class="btn" id="bSample"></button>
+      <button type="button" class="btn" id="bTemplate"></button>
+      <button type="button" class="link" id="bClear"></button>
+    </div>
+    <p class="muted" style="font-size:13px" id="pHint"></p>
+    <div class="toast muted" id="toastA" role="status"></div>
+  </section>
+
+  <section class="card" id="secB" hidden>
+    <h2 id="hB"></h2>
+    <div class="row" id="impRow"><label for="impDate" id="lblImp" style="font-weight:600"></label><input type="date" id="impDate"></div>
+    <p class="muted" style="font-size:13px" id="pImp"></p>
+    <div id="banner"></div>
+    <div class="issues" id="issues"></div>
+    <div class="row" style="justify-content:space-between">
+      <label class="row" style="gap:8px;min-height:40px"><input type="checkbox" id="onlyProblems"><span id="lblOnly" style="font-weight:500"></span></label>
+      <span class="muted" style="font-size:13px" id="shown"></span>
+    </div>
+    <p class="muted" style="font-size:13px" id="legend"></p>
+    <div class="tablebox"><table id="tbl"></table></div>
+  </section>
+
+  <section class="card" id="secC" hidden>
+    <h2 id="hC"></h2>
+    <p class="muted" id="pC"></p>
+    <div class="tiles" id="tiles"></div>
+    <label class="confirm"><input type="checkbox" id="chkConfirm"><span id="lblConfirm"></span></label>
+    <div class="row">
+      <button type="button" class="btn primary" id="bSave"></button>
+      <button type="button" class="btn" id="bCopy"></button>
+      <span class="muted" style="font-size:13px" id="fname"></span>
+    </div>
+    <div class="toast" id="toastC" role="status"></div>
+    <details><summary id="sumXml"></summary><textarea id="xmlout" readonly aria-label="PAXml"></textarea></details>
+    <p class="muted" style="font-size:13px" id="pLimits"></p>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ---------- strings ---------- */
+var LANG='sv';
+try{var sv0=localStorage.getItem('paxml-lang');if(sv0==='en'||sv0==='sv')LANG=sv0}catch(e){}
+var S={
+ sv:{test:'Testversion',target:'Mål: Fortnox Lön',offline:'Fungerar offline · Listan lämnar aldrig din dator',
+  st1:'1 · Klistra in listan',st1b:'Från Excel eller en CSV-fil',st2:'2 · Rätta fel, bekräfta varningar',st3:'3 · Kontrollera och spara',st3b:'Kontrollsumma, sedan filen',
+  hA:'Lägg in personallistan',noteTest:'Testversion. Använd bara påhittad data här. Filen är inte testad mot Fortnox ännu.',
+  lblPaste:'Klistra in tabellen här (Ctrl+V från Excel, inklusive rubrikraden)',
+  check:'Kontrollera listan',sample:'Prova med exempeldata (14 påhittade anställda)',tmpl:'Spara tom mall (.csv)',clear:'Rensa',
+  hint:'Kolumnerna matchas på rubrikerna. Saknas rubrikrad används mallens ordning. Tab, semikolon och komma fungerar som avskiljare.',
+  hB:'Rätta fel och bekräfta varningar',onlyP:'Visa bara rader med problem',legend:'Heldragen röd kant = fel. Streckad gul kant = varning. Texten under ett värde visar hur det skrivs i filen. Bocka ur "Med" för att lämna en rad utanför filen.',
+  hC:'Kontrollera och spara filen',pC:'Jämför antal och summa med kundens senaste lönekörning innan du sparar.',
+  t_n:'anställda',t_sum:'kr månadslön, summa',t_m:'månadsanställda',t_h:'timanställda',t_p:'provanställda',t_s:'med slutdatum',t_x:'rader utelämnade',
+  confirm:function(n,s){return 'Jag har jämfört antal ('+n+') och månadslönesumma ('+s+' kr) med kundens senaste lönekörning.'},
+  save:'Spara PAXml-fil',copy:'Kopiera XML',saved:'Filen sparades. Byt ändelsen från .txt till .xml innan du importerar den (testversionen kan inte spara .xml direkt).',
+  declined:'Sparandet avbröts.',saveNA:'Det går inte att spara filer här. Använd Kopiera XML i stället.',copied:'XML kopierad.',copyFail:'Kunde inte kopiera automatiskt. Texten är markerad, tryck Ctrl+C.',
+  sumXml:'Visa XML-koden (behövs normalt inte)',
+  limits:'Filen innehåller personuppgifter, anställning, lön och bankkonto. Semestersaldo, årets ackumulerade värden och arbetstidsschema skrivs inte, och läggs in i Fortnox efter importen. Strukturen är byggd efter PAXml 2.2-schemat men inte testad i Fortnox.',
+  foot:'Testversion 0.2 · Allt sker i din webbläsare · Av [Namn]',
+  bannerBad:function(e,w,ok,tot){return ok+' av '+tot+' rader är klara. '+e+' fel måste rättas och '+w+(w===1?' varning':' varningar')+' bekräftas.'},
+  bannerBadSub:'Raden kontrolleras om när du lämnar cellen. Ingen fil kan sparas förrän felen är borta.',
+  bannerOk:function(tot){return 'Alla '+tot+' rader klarade kontrollen.'},bannerOkSub:'Gå vidare till kontrollsumman nedan.',
+  empty:'Inga rader hittades. Klistra in tabellen först.',
+  shown:function(a,b){return 'Visar '+a+' av '+b+' rader'},goto:'Gå till cellen',ack:'Jag har kontrollerat',
+  need:'Fel',warn:'VARNING',err:'FEL',row:'Rad',with:'Med',stat:'Status',okTxt:'OK',
+  colsMissing:function(c){return 'Kolumner som saknas i rubrikraden: '+c+'. De fylls inte i.'},
+  loaded:function(n){return n+' rader inlästa.'},hdrUsed:'Rubrikrad hittad.',hdrNone:'Ingen rubrikrad hittad, mallens kolumnordning används.',
+  templateSaved:'Mallen sparades.',
+  lastRow:'Det finns inga fler rader.',
+  et:{need:'Obligatoriskt fält saknas',anr_dup:'Anställningsnummer används flera gånger',pnr_fmt:'Personnummer har fel antal siffror',pnr_chk:'Personnummer med fel kontrollsiffra',pnr_date:'Personnummer med ogiltigt datum',pnr_dup:'Personnummer används flera gånger',date:'Ogiltiga datum',slut_before:'Slutdatum före anställningsdatum',lon_bad:'Lön saknas eller är noll',grad_rng:'Sysselsättningsgrad utanför 1–100',tab:'Ogiltig skattetabell',kol:'Ogiltig skattekolumn',iban:'IBAN ser fel ut',pay_bad:'Okänd lönform'},
+  lblImp:'Importdatum',pImp:'Slutdatum före detta datum flaggas, eftersom personen kanske inte behöver importeras. Ändra om du importerar en annan dag.',
+  choose:'Välj…',nrows:function(n){return n+(n===1?' rad':' rader')},showRows:function(n){return 'Visa vilka '+n+(n===1?' rad':' rader')},
+  ackAll:function(n){return n===1?'Jag har kontrollerat':'Jag har kontrollerat alla '+n},keepAll:function(n){return 'Ta med '+(n===1?'personen':'alla '+n)+' (slutlön)'},exclAll:function(n){return 'Utelämna '+(n===1?'personen':'alla '+n)},exclRow:'Utelämna',
+  unkTitle:'Okända anställningsformer',unkHelp:'Välj vad varje värde ska bli i Fortnox. Valet gäller alla rader med samma värde.',
+  gt:{grad_tim:'Timanställda med sysselsättningsgrad',prov:'Provanställning utan slutdatum',lon_sane:'Ovanliga löner',epost:'E-postadresser som ser fel ut',pair:'Skattetabell utan skattekolumn',no_tax:'Skattetabell saknas',slut_past:'Slutdatum har redan passerat',bank_clr:'Clearingnummer saknas',bank_acc:'Kontonummer saknas',bank_none:'Bankuppgifter saknas',bank_fmt:'Kontonummer ser ovanligt ut',clr_fmt:'Clearingnummer ser ovanligt ut',pay_conf:'Anställningsform och lönform säger emot varandra'},
+  gh:{grad_tim:'Graden skrivs inte till filen, eftersom timlön inte har någon grad. Inget behöver rättas om det stämmer.',prov:'Kontrollera att provanställningen inte ska avslutas.',lon_sane:'Kontrollera beloppet och att lönformen (månad eller timme) stämmer.',epost:'Rätta adressen eller lämna fältet tomt.',pair:'Lägg in skattekolumn, annars sätter Fortnox den själv.',no_tax:'Hämtas ofta inte från personalsystemet. Lägg in tabell och kolumn i filen eller i Fortnox efter importen.',slut_past:'Ta med personen om slutlön eller slutavräkning ska köras. Annars utelämna.',bank_clr:'Utan clearingnummer går inte kontot att använda för utbetalning.',bank_acc:'Clearingnummer finns men inget kontonummer.',bank_none:'Utbetalning går inte att göra utan bankuppgifter. Lägg in dem i Fortnox.',bank_fmt:'Kontonummer har normalt 5–12 siffror.',clr_fmt:'Clearingnummer har 4 eller 5 siffror.',pay_conf:'Lönformen i listan används för filen. Kontrollera att den stämmer.'},
+
+  m:{
+   need:function(p){return p.c+' saknas.'},
+   pay_bad:function(p){return 'Okänd lönform: '+p.v+'. Skriv Månad eller Timme.'},
+   pay_conf:function(){return 'Timanställd men lönform månad.'},
+   slut_past:function(p){return 'Slutdatum '+p.v+' ligger före importdatum.'},
+   no_tax:function(){return 'Skattetabell saknas.'},
+   bank_clr:function(){return 'Clearingnummer saknas.'},bank_acc:function(){return 'Kontonummer saknas.'},bank_none:function(){return 'Bankuppgifter saknas.'},
+   bank_fmt:function(p){return 'Kontonumret ser ovanligt ut: '+p.v+'.'},clr_fmt:function(p){return 'Clearingnumret ser ovanligt ut: '+p.v+'.'},
+
+   anr_dup:function(p){return 'Anställningsnumret måste vara unikt. '+p.v+' används även på rad '+p.r+'. Annars skriver Fortnox över den ena.'},
+   pnr_fmt:function(p){return 'Personnumret ska ha 10 eller 12 siffror. Du angav '+p.v+'.'},
+   pnr_chk:function(p){return 'Kontrollsiffran stämmer inte för '+p.v+'. Kontrollera mot ID-handling. Vanlig orsak: två siffror har bytt plats.'},
+   pnr_date:function(p){return 'Födelsedatumet i personnumret är ogiltigt: '+p.v+'.'},
+   pnr_dup:function(p){return 'Personnumret finns även på rad '+p.r+'.'},
+   date:function(p){return p.c+' är inte ett datum: '+p.v+'. Skriv ÅÅÅÅ-MM-DD.'},
+   slut_before:function(){return 'Slutdatum ligger före anställningsdatum.'},
+   anstform:function(p){return 'Okänd anställningsform: '+p.v+'. Använd Tillsvidare, Visstid, Provanställning eller Timanställd.'},
+   lon_bad:function(p){return 'Lönen måste vara ett tal större än noll. Du angav '+p.v+'.'},
+   lon_sane:function(p){return 'Ovanligt belopp: '+p.v+(p.h?' kr/tim':' kr/mån')+'. Kontrollera att det stämmer.'},
+   grad_rng:function(p){return 'Sysselsättningsgrad ska vara 1–100. Du angav '+p.v+'.'},
+   grad_tim:function(){return 'Timanställd med sysselsättningsgrad. Värdet skrivs inte till filen, eftersom timlön inte har någon grad.'},
+   tab:function(p){return 'Skattetabell måste vara ett heltal 29–42. Du angav '+p.v+'. Tabellen står på skattebeskedet.'},
+   kol:function(p){return 'Skattekolumn måste vara 1–6. Du angav '+p.v+'.'},
+   pair:function(){return 'Skattetabell är angiven men skattekolumn saknas.'},
+   iban:function(p){return 'IBAN ser inte rätt ut: '+p.v+'.'},
+   epost:function(p){return 'E-postadressen ser inte rätt ut: '+p.v+'.'},
+   prov:function(){return 'Provanställning utan slutdatum. Kontrollera att provanställningen inte ska avslutas.'}
+  }},
+ en:{test:'Test version',target:'Target: Fortnox Lön',offline:'Works offline · Your list never leaves your computer',
+  st1:'1 · Paste the list',st1b:'From Excel or a CSV file',st2:'2 · Fix errors, confirm warnings',st3:'3 · Check and save',st3b:'Control totals, then the file',
+  hA:'Add the staff list',noteTest:'Test version. Use made-up data only. The file has not been tested against Fortnox yet.',
+  lblPaste:'Paste the table here (Ctrl+V from Excel, including the header row)',
+  check:'Check the list',sample:'Try example data (14 made-up employees)',tmpl:'Save blank template (.csv)',clear:'Clear',
+  hint:'Columns are matched on the headers. Without a header row the template order is used. Tab, semicolon and comma all work as separators.',
+  hB:'Fix errors and confirm warnings',onlyP:'Show only rows with problems',legend:'Solid red border = error. Dashed yellow border = warning. The text under a value shows how it is written to the file. Untick "Incl." to leave a row out of the file.',
+  hC:'Check and save the file',pC:'Compare the count and total with the client\'s latest payroll run before you save.',
+  t_n:'employees',t_sum:'SEK monthly salary, total',t_m:'monthly paid',t_h:'hourly paid',t_p:'on probation',t_s:'with end date',t_x:'rows left out',
+  confirm:function(n,s){return 'I compared the count ('+n+') and monthly salary total ('+s+' SEK) with the client\'s latest payroll run.'},
+  save:'Save PAXml file',copy:'Copy XML',saved:'File saved. Change the extension from .txt to .xml before you import it (the test version cannot save .xml directly).',
+  declined:'Saving was cancelled.',saveNA:'Files cannot be saved here. Use Copy XML instead.',copied:'XML copied.',copyFail:'Could not copy automatically. The text is selected, press Ctrl+C.',
+  sumXml:'Show the XML (not normally needed)',
+  limits:'The file contains personal data, employment, salary and bank account. Holiday balances, year-to-date totals and work schedules are not written; enter them in Fortnox after the import. The structure follows the PAXml 2.2 schema but has not been tested in Fortnox.',
+  foot:'Test version 0.2 · Everything runs in your browser · By [Name]',
+  bannerBad:function(e,w,ok,tot){return ok+' of '+tot+' rows are ready. '+e+' errors to fix and '+w+(w===1?' warning':' warnings')+' to confirm.'},
+  bannerBadSub:'A row is rechecked when you leave the cell. No file can be saved until the errors are gone.',
+  bannerOk:function(tot){return 'All '+tot+' rows passed the check.'},bannerOkSub:'Continue to the control totals below.',
+  empty:'No rows found. Paste the table first.',
+  shown:function(a,b){return 'Showing '+a+' of '+b+' rows'},goto:'Go to cell',ack:'I have checked this',
+  need:'Error',warn:'WARNING',err:'ERROR',row:'Row',with:'Incl.',stat:'Status',okTxt:'OK',
+  colsMissing:function(c){return 'Columns missing from the header row: '+c+'. They stay empty.'},
+  loaded:function(n){return n+' rows read.'},hdrUsed:'Header row found.',hdrNone:'No header row found, template column order used.',
+  templateSaved:'Template saved.',lastRow:'No more rows.',
+  et:{need:'Required field missing',anr_dup:'Employee number used more than once',pnr_fmt:'Personal ID number has the wrong number of digits',pnr_chk:'Personal ID number with wrong check digit',pnr_date:'Personal ID number with invalid date',pnr_dup:'Personal ID number used more than once',date:'Invalid dates',slut_before:'End date before start date',lon_bad:'Salary missing or zero',grad_rng:'Employment rate outside 1–100',tab:'Invalid tax table',kol:'Invalid tax column',iban:'IBAN looks wrong',pay_bad:'Unknown pay type'},
+  lblImp:'Import date',pImp:'End dates before this date are flagged, because the person may not need to be imported. Change it if you import on another day.',
+  choose:'Choose…',nrows:function(n){return n+(n===1?' row':' rows')},showRows:function(n){return 'Show the '+n+(n===1?' row':' rows')},
+  ackAll:function(n){return n===1?'I have checked this':'I have checked all '+n},keepAll:function(n){return 'Include '+(n===1?'the person':'all '+n)+' (final pay)'},exclAll:function(n){return 'Leave out '+(n===1?'the person':'all '+n)},exclRow:'Leave out',
+  unkTitle:'Unknown employment types',unkHelp:'Choose what each value becomes in Fortnox. The choice applies to every row with the same value.',
+  gt:{grad_tim:'Hourly employees with an employment rate',prov:'Probation without an end date',lon_sane:'Unusual salaries',epost:'E-mail addresses that look wrong',pair:'Tax table without tax column',no_tax:'Tax table missing',slut_past:'End date has already passed',bank_clr:'Clearing number missing',bank_acc:'Account number missing',bank_none:'Bank details missing',bank_fmt:'Account number looks unusual',clr_fmt:'Clearing number looks unusual',pay_conf:'Employment type and pay type disagree'},
+  gh:{grad_tim:'The rate is not written to the file, since hourly pay has no rate. Nothing to fix if this is expected.',prov:'Check that the probation should not end.',lon_sane:'Check the amount and that the pay type (monthly or hourly) is right.',epost:'Correct the address or leave the field empty.',pair:'Add the tax column, otherwise Fortnox sets it.',no_tax:'Often not available in the HR system. Add table and column in the file or in Fortnox after the import.',slut_past:'Include the person if final pay or settlement is still to be run. Otherwise leave out.',bank_clr:'Without a clearing number the account cannot be used for payment.',bank_acc:'A clearing number exists but no account number.',bank_none:'Payment is not possible without bank details. Add them in Fortnox.',bank_fmt:'Account numbers normally have 5–12 digits.',clr_fmt:'Clearing numbers have 4 or 5 digits.',pay_conf:'The pay type in the list is used for the file. Check that it is right.'},
+
+  m:{
+   need:function(p){return p.c+' is missing.'},
+   pay_bad:function(p){return 'Unknown pay type: '+p.v+'. Write Monthly or Hourly.'},
+   pay_conf:function(){return 'Hourly employment type but monthly pay type.'},
+   slut_past:function(p){return 'End date '+p.v+' is before the import date.'},
+   no_tax:function(){return 'Tax table missing.'},
+   bank_clr:function(){return 'Clearing number missing.'},bank_acc:function(){return 'Account number missing.'},bank_none:function(){return 'Bank details missing.'},
+   bank_fmt:function(p){return 'The account number looks unusual: '+p.v+'.'},clr_fmt:function(p){return 'The clearing number looks unusual: '+p.v+'.'},
+
+   anr_dup:function(p){return 'Employee number must be unique. '+p.v+' is also used on row '+p.r+'. Otherwise Fortnox overwrites one of them.'},
+   pnr_fmt:function(p){return 'Personal ID number must have 10 or 12 digits. You entered '+p.v+'.'},
+   pnr_chk:function(p){return 'The check digit is wrong for '+p.v+'. Compare with an ID document. Common cause: two digits swapped.'},
+   pnr_date:function(p){return 'The birth date in the ID number is invalid: '+p.v+'.'},
+   pnr_dup:function(p){return 'The same ID number is also on row '+p.r+'.'},
+   date:function(p){return p.c+' is not a date: '+p.v+'. Write YYYY-MM-DD.'},
+   slut_before:function(){return 'End date is before the start date.'},
+   anstform:function(p){return 'Unknown employment type: '+p.v+'. Use Tillsvidare, Visstid, Provanställning or Timanställd.'},
+   lon_bad:function(p){return 'Salary must be a number above zero. You entered '+p.v+'.'},
+   lon_sane:function(p){return 'Unusual amount: '+p.v+(p.h?' SEK/h':' SEK/month')+'. Check that it is right.'},
+   grad_rng:function(p){return 'Employment rate must be 1–100. You entered '+p.v+'.'},
+   grad_tim:function(){return 'Hourly employee with an employment rate. The value is not written to the file, since hourly pay has no rate.'},
+   tab:function(p){return 'Tax table must be a whole number 29–42. You entered '+p.v+'. It is on the tax notice.'},
+   kol:function(p){return 'Tax column must be 1–6. You entered '+p.v+'.'},
+   pair:function(){return 'Tax table is set but the tax column is missing.'},
+   iban:function(p){return 'The IBAN does not look right: '+p.v+'.'},
+   epost:function(p){return 'The e-mail address does not look right: '+p.v+'.'},
+   prov:function(){return 'Probationary employment without an end date. Check that the probation should not end.'}
+  }}
+};
+function T(){return S[LANG]}
+
+/* ---------- columns ---------- */
+var COLS=[
+ ['anstnr',{sv:'Anst.nr',en:'Employee no.'},84,1,['anstnr','anstallningsnummer','anstallningsnr','employeeid','employeenumber','nr']],
+ ['personnr',{sv:'Personnummer',en:'Personal ID no.'},150,1,['personnummer','personnr','pnr','ssn']],
+ ['fornamn',{sv:'Förnamn',en:'First name'},110,1,['fornamn','firstname','givenname']],
+ ['efternamn',{sv:'Efternamn',en:'Last name'},120,1,['efternamn','lastname','surname']],
+ ['postadress',{sv:'Postadress',en:'Address'},150,0,['postadress','adress','gatuadress','address']],
+ ['postnr',{sv:'Postnr',en:'Postcode'},80,0,['postnr','postnummer','zip','postalcode']],
+ ['ort',{sv:'Ort',en:'City'},110,0,['ort','stad','city']],
+ ['epost',{sv:'E-post',en:'E-mail'},180,0,['epost','epostadress','email','mail']],
+ ['anstform',{sv:'Anställningsform',en:'Employment type'},140,1,['anstallningsform','anstform','form','employmenttype']],
+ ['anstdatum',{sv:'Anst.datum',en:'Start date'},110,1,['anstallningsdatum','anstdatum','startdatum','startdate','hiredate']],
+ ['slutdatum',{sv:'Slutdatum',en:'End date'},110,0,['slutdatum','avgdatum','enddate']],
+ ['grad',{sv:'Grad',en:'Rate'},70,0,['sysselsattningsgrad','grad','employmentrate','fte']],
+ ['lon',{sv:'Lön',en:'Salary'},110,1,['lon','manadslon','timlon','salary']],
+ ['lonform',{sv:'Lönform',en:'Pay type'},100,0,['lonform','lonetyp','paytype','salarypaytype','payperiod','lonperiod','salarypayperiod']],
+ ['skattetabell',{sv:'Skattetabell',en:'Tax table'},90,0,['skattetabell','taxtable','tabell']],
+ ['skattekolumn',{sv:'Skattekol.',en:'Tax col.'},80,0,['skattekolumn','kolumn','taxcolumn']],
+ ['clearing',{sv:'Clearingnr',en:'Clearing no.'},90,0,['clearing','clearingnr','clearingnummer','sortcode','bankclearing','sortcodeclearingnumber']],
+ ['bankkonto',{sv:'Bankkonto / IBAN',en:'Bank account / IBAN'},170,0,['bankkonto','bankaccount','konto','iban']]
+];
+var KEYS=COLS.map(function(c){return c[0]});
+function colLabel(k){for(var i=0;i<COLS.length;i++)if(COLS[i][0]===k)return COLS[i][1][LANG];return k}
+
+/* ---------- state ---------- */
+var rows=[],nextId=1,acks={},results=[];
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function nk(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'')}
+
+/* ---------- parsing ---------- */
+function splitLine(line,d){
+  var out=[],cur='',q=false;
+  for(var i=0;i<line.length;i++){var ch=line[i];
+    if(q){if(ch==='"'){if(line[i+1]==='"'){cur+='"';i++}else q=false}else cur+=ch}
+    else if(ch==='"')q=true; else if(ch===d){out.push(cur);cur=''} else cur+=ch}
+  out.push(cur);return out}
+function parseTable(text){
+  text=text.replace(/^﻿/,'').replace(/\r/g,'');
+  var lines=text.split('\n').filter(function(l){return l.trim()!==''});
+  if(!lines.length)return {rows:[],hdr:false,missing:[]};
+  var f=lines[0],d='\t',best=(f.match(/\t/g)||[]).length;
+  [';',','].forEach(function(c){var n=(f.match(new RegExp(c==='.'?'\\.':c,'g'))||[]).length;if(n>best){best=n;d=c}});
+  var grid=lines.map(function(l){return splitLine(l,d).map(function(x){return x.trim()})});
+  var map={},hits=0;
+  grid[0].forEach(function(h,i){var n=nk(h);for(var c=0;c<COLS.length;c++){if((COLS[c][4].indexOf(n)>-1||nk(COLS[c][1].sv)===n||nk(COLS[c][1].en)===n)&&map[COLS[c][0]]===undefined){map[COLS[c][0]]=i;hits++;break}}});
+  var hdr=hits>=4,data=grid,missing=[];
+  if(hdr){data=grid.slice(1);KEYS.forEach(function(k){if(map[k]===undefined)missing.push(colLabel(k))})}
+  else{map={};KEYS.forEach(function(k,i){map[k]=i})}
+  var out=data.map(function(r){var o={};KEYS.forEach(function(k){o[k]=map[k]===undefined?'':(r[map[k]]||'')});return o});
+  return {rows:out,hdr:hdr,missing:missing}}
+
+/* ---------- normalisers ---------- */
+function luhn(d10){var s=0;for(var i=0;i<10;i++){var v=+d10[i]*(i%2===0?2:1);if(v>9)v-=9;s+=v}return s%10===0}
+function luhnDigit(d9){var s=0;for(var i=0;i<9;i++){var v=+d9[i]*(i%2===0?2:1);if(v>9)v-=9;s+=v}return (10-s%10)%10}
+function validYMD(y,m,d){var dt=new Date(Date.UTC(y,m-1,d));return dt.getUTCFullYear()===y&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d}
+function pad(n){return (n<10?'0':'')+n}
+function parseDate(s){
+  s=String(s).trim();if(!s)return null;var m;
+  if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/))){return validYMD(+m[1],+m[2],+m[3])?s:false}
+  if((m=s.match(/^(\d{4})(\d{2})(\d{2})$/))){return validYMD(+m[1],+m[2],+m[3])?m[1]+'-'+m[2]+'-'+m[3]:false}
+  if((m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/))){return validYMD(+m[3],+m[2],+m[1])?m[3]+'-'+pad(+m[2])+'-'+pad(+m[1]):false}
+  if(/^\d{5}$/.test(s)){var dt=new Date(Date.UTC(1899,11,30)+(+s)*86400000);return dt.getUTCFullYear()+'-'+pad(dt.getUTCMonth()+1)+'-'+pad(dt.getUTCDate())}
+  return false}
+function parseNum(s){
+  var t=String(s).replace(/ /g,' ').toLowerCase().replace(/kr|sek|\/tim|\/h|%|\s/g,'').replace(',','.');
+  if(t===''||!/^-?\d+(\.\d+)?$/.test(t))return NaN;return +t}
+var ANST={tillsvidare:'Tillsvidare',fast:'Tillsvidare',tillsvidareanstalld:'Tillsvidare',visstid:'Visstid',tidsbegransad:'Visstid',visstidsanstalld:'Visstid',
+ provanstallning:'Provanställning',prov:'Provanställning',timanstalld:'Timanställd',tim:'Timanställd',timlon:'Timanställd',timmar:'Timanställd'};
+ANST.permanent='Tillsvidare';ANST.fixedterm='Visstid';ANST.temporary='Visstid';ANST.tempworker='Visstid';ANST.parentalleavecover='Visstid';ANST.intermittent='Timanställd';ANST.hourly='Timanställd';ANST.casual='Timanställd';ANST.probation='Provanställning';ANST.probationary='Provanställning';
+var PAY={manad:'M',manadslon:'M',manadsavlonad:'M',monthly:'M',salaried:'M',tim:'T',timme:'T',timlon:'T',timavlonad:'T',hourly:'T',timmar:'T'};
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+var anstMap={},impDate=todayStr();
+function nowYear(){return new Date().getFullYear()}
+
+/* ---------- validation ---------- */
+function validateAll(){
+  var seenA={},seenP={};
+  return rows.map(function(r,i){
+    var raw=r.raw,iss=[],v={},norm={},rowNo=i+2;
+    function add(l,col,code,p){iss.push({lvl:l,col:col,code:code,p:p||{}})}
+    function need(k,val){if(String(val).trim()===''){add('e',k,'need',{c:colLabel(k)});return true}return false}
+    // anstnr
+    v.anstnr=raw.anstnr.trim();
+    if(!need('anstnr',raw.anstnr)&&r.inc){if(seenA[v.anstnr]!==undefined)add('e','anstnr','anr_dup',{v:v.anstnr,r:seenA[v.anstnr]});else seenA[v.anstnr]=rowNo}
+    // personnummer
+    var ps=raw.personnr.trim();
+    if(!need('personnr',ps)){
+      var plus=/\+/.test(ps),d=ps.replace(/\D/g,'');
+      if(d.length===10){var yy=+d.slice(0,2),y=2000+yy;if(y>nowYear())y-=100;if(plus)y-=100;d=String(y)+d.slice(2)}
+      if(d.length!==12)add('e','personnr','pnr_fmt',{v:ps});
+      else{var by=+d.slice(0,4),bm=+d.slice(4,6),bd=+d.slice(6,8);if(bd>60)bd-=60;
+        if(!validYMD(by,bm,bd))add('e','personnr','pnr_date',{v:ps});
+        else if(!luhn(d.slice(2)))add('e','personnr','pnr_chk',{v:ps});
+        else{v.personnr=d;if(d!==ps)norm.personnr='→ '+d;
+          if(r.inc){if(seenP[d]!==undefined)add('e','personnr','pnr_dup',{r:seenP[d]});else seenP[d]=rowNo}}}}
+    v.fornamn=raw.fornamn.trim();need('fornamn',raw.fornamn);
+    v.efternamn=raw.efternamn.trim();need('efternamn',raw.efternamn);
+    v.postadress=raw.postadress.trim();v.ort=raw.ort.trim();
+    var pz=raw.postnr.replace(/\D/g,'');v.postnr=pz;if(pz&&pz!==raw.postnr.trim())norm.postnr='→ '+pz;
+    v.epost=raw.epost.trim();if(v.epost&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.epost))add('w','epost','epost',{v:v.epost});
+    // anstform
+    var af=raw.anstform.trim();
+    if(!need('anstform',af)){var a=ANST[nk(af)]||anstMap[nk(af)];if(!a)add('e','anstform','anstform',{v:af,key:nk(af)});else{v.anstform=a;if(a!==af)norm.anstform='→ '+a}}
+    var pt='';if(raw.lonform.trim()!==''){pt=PAY[nk(raw.lonform)]||'';if(!pt)add('e','lonform','pay_bad',{v:raw.lonform})}
+    var hourly=pt?pt==='T':v.anstform==='Timanställd';
+    if(pt==='M'&&v.anstform==='Timanställd')add('w','lonform','pay_conf');
+    // dates
+    var ad=parseDate(raw.anstdatum);
+    if(!need('anstdatum',raw.anstdatum)){if(ad===false)add('e','anstdatum','date',{c:colLabel('anstdatum'),v:raw.anstdatum});else{v.anstdatum=ad;if(ad!==raw.anstdatum.trim())norm.anstdatum='→ '+ad}}
+    var sd=parseDate(raw.slutdatum);
+    if(raw.slutdatum.trim()!==''){if(sd===false)add('e','slutdatum','date',{c:colLabel('slutdatum'),v:raw.slutdatum});else{v.slutdatum=sd;if(sd!==raw.slutdatum.trim())norm.slutdatum='→ '+sd;if(v.anstdatum&&sd<v.anstdatum)add('e','slutdatum','slut_before');else if(sd<impDate)add('w','slutdatum','slut_past',{v:sd})}}
+    if(v.anstform==='Provanställning'&&!v.slutdatum&&raw.slutdatum.trim()==='')add('w','slutdatum','prov');
+    // grad
+    if(raw.grad.trim()!==''){var g=parseNum(raw.grad);
+      if(!(g>=1&&g<=100))add('e','grad','grad_rng',{v:raw.grad});
+      else{v.grad=g;if(hourly)add('w','grad','grad_tim')}}
+    // lön
+    if(!need('lon',raw.lon)){var l=parseNum(raw.lon);
+      if(!(l>0))add('e','lon','lon_bad',{v:raw.lon});
+      else{v.lon=l;var shown=String(l);if(shown!==raw.lon.trim())norm.lon='→ '+shown+(hourly?' kr/tim':' kr/mån');
+        if(v.anstform){if(hourly?(l<50||l>1500):(l<10000||l>150000))add('w','lon','lon_sane',{v:l,h:hourly})}}}
+    // skatt
+    var tb=raw.skattetabell.trim(),kl=raw.skattekolumn.trim();
+    if(tb!==''){var t=parseNum(tb);if(!(Number.isInteger(t)&&t>=29&&t<=42))add('e','skattetabell','tab',{v:tb});else v.skattetabell=t}
+    if(kl!==''){var k=parseNum(kl);if(!(Number.isInteger(k)&&k>=1&&k<=6))add('e','skattekolumn','kol',{v:kl});else v.skattekolumn=k}
+    if(tb!==''&&kl===''&&v.skattetabell)add('w','skattekolumn','pair');
+    if(tb==='')add('w','skattetabell','no_tax');
+    // bank
+    function blank(z){z=z.trim();return(/^[^A-Za-z0-9]*$/.test(z)||/^n\/?a\b/i.test(z))?'':z}
+    var bk=blank(raw.bankkonto).replace(/\s+/g,' '),cl=blank(raw.clearing);
+    if(bk){if(/^[A-Za-z]{2}\d{2}/.test(bk)){var ib=bk.replace(/\s/g,'').toUpperCase();if(/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/.test(ib)){v.bankiban=ib;if(ib!==raw.bankkonto.trim())norm.bankkonto='→ '+ib}else add('e','bankkonto','iban',{v:bk})}
+      else{var ac=bk.replace(/[\s.\-]/g,'');if(/^\d+$/.test(ac)){v.bankkonto=ac;if(ac!==raw.bankkonto.trim())norm.bankkonto='→ '+ac;if(ac.length<5||ac.length>12)add('w','bankkonto','bank_fmt',{v:bk})}else{v.bankkonto=bk;add('w','bankkonto','bank_fmt',{v:bk})}}}
+    if(cl&&!v.bankiban){var cd=cl.replace(/[\s\-]/g,'');if(/^\d{4,5}$/.test(cd)){v.clearing=cd;if(cd!==cl)norm.clearing='→ '+cd}else add('w','clearing','clr_fmt',{v:cl})}
+    if(!v.bankiban){if(v.bankkonto&&!cl)add('w','clearing','bank_clr');else if(!bk&&!cl)add('w','bankkonto','bank_none');else if(!bk&&cl)add('w','bankkonto','bank_acc')}
+    v.hourly=hourly;
+    // acks
+    iss.forEach(function(x){x.id=r.id+':'+x.code;x.acked=x.lvl==='w'&&!!acks[x.id]});
+    return {rowNo:rowNo,v:v,norm:norm,iss:iss,hourly:hourly}
+  })}
+
+/* ---------- xml ---------- */
+function x(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
+function num(n){return String(Math.round(n*100)/100)}
+function buildXml(){
+  var now=new Date(),dt=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'T'+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  var o=['<?xml version="1.0" encoding="UTF-8"?>','<paxml>','  <header>','    <version>2.2</version>','    <format>REGISTER</format>','    <datum>'+dt+'</datum>','    <programnamn>PAXml-mallen 0.1 test</programnamn>','  </header>','  <personal>'];
+  rows.forEach(function(r,i){if(!r.inc)return;var v=results[i].v;
+    o.push('    <person anstid="'+x(v.anstnr)+'" persnr="'+x(v.personnr)+'">');
+    function el(n,val){if(val!==undefined&&val!==''&&val!==null)o.push('      <'+n+'>'+x(val)+'</'+n+'>')}
+    el('fornamn',v.fornamn);el('efternamn',v.efternamn);el('postadress',v.postadress);el('postnr',v.postnr);el('ort',v.ort);el('epostarb',v.epost);
+    el('anstform',v.anstform);el('anstdatum',v.anstdatum);el('avgdatum',v.slutdatum);
+    if(v.bankiban)el('bankiban',v.bankiban);else{el('bankclearing',v.clearing);el('bankkonto',v.bankkonto)}
+    el('lonform',v.hourly?'TIM':'MÅN');el(v.hourly?'timlon':'manlon',num(v.lon));
+    if(!v.hourly&&v.grad!==undefined)el('sysgrad',num(v.grad));
+    el('skattetabell',v.skattetabell);el('skattekolumn',v.skattekolumn);
+    o.push('    </person>')});
+  o.push('  </personal>','</paxml>');return o.join('\n')}
+
+/* ---------- sample ---------- */
+function sampleRows(){
+  function pn(date,serial,wrong,tenDigit){var d9=date.replace(/-/g,'').slice(2)+serial,c=luhnDigit(d9);if(wrong)c=(c+1)%10;
+    return tenDigit?date.slice(2,4)+date.slice(5,7)+date.slice(8,10)+'-'+serial+c:date.replace(/-/g,'')+'-'+serial+c}
+  var E=[
+   ['1001','Anna','Berg','1985-03-14','239',1,0,'Tillsvidare','2020-02-03','','100 %','36000','32'],
+   ['1002','Erik','Lund','1991-07-22','445',0,0,'Tillsvidare','2018-09-10','','100 %','44900','45'],
+   ['1003','Johan','Ek','1988-11-02','117',0,0,'Tillsvidare','2019-03-01','','80 %','38500','31'],
+   ['1004','Sara','Holm','1993-01-18','550',0,0,'Tillsvidare','2025-03-17','','100 %','29500','30'],
+   ['1005','Maja','Nilsson','1979-09-30','321',0,0,'Tillsvidare','2021-08-16','','100 %','34000','30'],
+   ['1006','Omar','Said','1996-05-05','872',0,0,'Timanställd','2024-01-08','','','185','33'],
+   ['1007','Lena','Ström','1990-12-12','408',0,0,'Tillsvidare','2023-02-13','','100 %','33000','31'],
+   ['1008','Nils','Ahl','1982-04-27','653',0,0,'Tillsvidare','2017-06-01','','100 %','36400','32'],
+   ['1009','Karl','Öst','1975-08-19','294',0,0,'Visstid','2022-05-02','2026-12-31','100 %','31000','30'],
+   ['1010','Julia','Hansson','1996-06-14','882',0,1,'Provanställning','2026-10-01','','100 %','31000','31'],
+   ['1011','Peter','Lind','1999-08-25','123',0,0,'Timanställd','2025-02-10','','80 %','190 kr/tim','33'],
+   ['1004','Tove','Wik','1997-04-03','663',0,0,'Tillsvidare','2025-04-01','','100 %','35200','30'],
+   ['1013','Ida','Sjö','1987-02-09','735',0,0,'Tillsvidare','2024-08-19','','100 %','37000','32'],
+   ['1014','Axel','Roth','1994-10-21','516',0,0,'Tillsvidare','2022-01-10','','100 %','37000','31']];
+  return E.map(function(e,i){var o={};KEYS.forEach(function(k){o[k]=''});
+    o.anstnr=e[0];o.fornamn=e[1];o.efternamn=e[2];o.personnr=pn(e[3],e[4],e[5],e[6]);o.anstform=e[7];o.anstdatum=e[8];o.slutdatum=e[9];o.grad=e[10];o.lon=e[11];o.skattetabell=e[12];o.skattekolumn='1';
+    if(i%4!==3)o.epost=e[1].toLowerCase().replace(/[^a-z]/g,function(c){return {'ö':'o','ä':'a','å':'a'}[c]||''})+'.'+e[2].toLowerCase().replace(/[^a-z]/g,function(c){return {'ö':'o','ä':'a','å':'a'}[c]||''})+'@exempel.example';
+    if(i%3!==2){o.clearing='5000';o.bankkonto=String(1100000+i*48217)}
+    return o})}
+
+/* ---------- rendering ---------- */
+function setStatic(){
+  var t=T();document.documentElement.lang=LANG;
+  $('pillTest').textContent=t.test;$('pillTarget').textContent=t.target;$('offline').textContent=t.offline;
+  $('lsv').setAttribute('aria-pressed',LANG==='sv');$('len').setAttribute('aria-pressed',LANG==='en');
+  $('hA').textContent=t.hA;$('noteTest').textContent=t.noteTest;$('lblPaste').textContent=t.lblPaste;
+  $('bCheck').textContent=t.check;$('bSample').textContent=t.sample;$('bTemplate').textContent=t.tmpl;$('bClear').textContent=t.clear;$('pHint').textContent=t.hint;
+  $('hB').textContent=t.hB;$('lblImp').textContent=t.lblImp;$('pImp').textContent=t.pImp;$('impDate').value=impDate;$('lblOnly').textContent=t.onlyP;$('legend').textContent=t.legend;
+  $('hC').textContent=t.hC;$('pC').textContent=t.pC;$('bSave').textContent=t.save;$('bCopy').textContent=t.copy;$('sumXml').textContent=t.sumXml;$('pLimits').textContent=t.limits;$('foot').textContent=t.foot}
+function renderSteps(){
+  var t=T(),has=rows.length>0,clear=has&&blocking()===0;
+  var st=[[t.st1,t.st1b,!has,has],[t.st2,'',has&&!clear,clear],[t.st3,t.st3b,clear,false]];
+  $('steps').innerHTML=st.map(function(s){return '<div class="step'+(s[2]?' on':'')+(s[3]?' done':'')+'"><strong>'+esc(s[0])+'</strong><small>'+esc(s[1])+'</small></div>'}).join('')}
+function counts(){
+  var e=0,ok=0,tot=0,ws={};
+  rows.forEach(function(r,i){if(!r.inc)return;tot++;var re=0,rw=0;results[i].iss.forEach(function(x){if(x.lvl==='e')re++;else if(!x.acked){rw++;ws[x.code]=1}});e+=re;if(!re&&!rw)ok++});
+  return {e:e,w:Object.keys(ws).length,ok:ok,tot:tot}}
+function blocking(){var c=counts();return c.e+c.w}
+function renderBanner(){
+  var t=T(),c=counts(),el=$('banner');
+  if(!c.tot){el.innerHTML='<div class="banner bad"><b>'+esc(t.empty)+'</b></div>';return}
+  if(c.e+c.w===0)el.innerHTML='<div class="banner good"><b>'+esc(t.bannerOk(c.tot))+'</b><span>'+esc(t.bannerOkSub)+'</span></div>';
+  else el.innerHTML='<div class="banner bad"><b>'+esc(t.bannerBad(c.e,c.w,c.ok,c.tot))+'</b><span>'+esc(t.bannerBadSub)+'</span></div>'}
+function renderIssues(){
+  var t=T(),h=[],groups={},order=[],unk={},unkOrder=[],egroups={},eorder=[];
+  rows.forEach(function(r,i){if(!r.inc)return;var res=results[i];
+    res.iss.forEach(function(x){
+      if(x.code==='anstform'){if(!unk[x.p.key]){unk[x.p.key]={v:x.p.v,n:0};unkOrder.push(x.p.key)}unk[x.p.key].n++;return}
+      if(x.lvl==='e'){var ek=x.code+(x.code==='need'?':'+x.col:'');if(!egroups[ek]){egroups[ek]=[];eorder.push(ek)}egroups[ek].push({r:r,res:res,x:x});return}
+      if(x.acked)return;
+      if(!groups[x.code]){groups[x.code]=[];order.push(x.code)}
+      groups[x.code].push({r:r,res:res,x:x})})});
+  var u=unkOrder.map(function(k){var o=['<option value="">'+esc(t.choose)+'</option>'];['Tillsvidare','Visstid','Provanställning','Timanställd'].forEach(function(a){o.push('<option value="'+a+'">'+a+'</option>')});
+    return '<label class="mapline"><span><b>'+esc(unk[k].v)+'</b> · '+esc(t.nrows(unk[k].n))+'</span><select data-amap="'+esc(k)+'" aria-label="'+esc(unk[k].v)+'">'+o.join('')+'</select></label>'}).join('');
+  var uh=u?'<div class="issue err group"><div class="txt"><span class="tag">'+t.err+'</span><b>'+esc(t.unkTitle)+'</b><div>'+esc(t.unkHelp)+'</div>'+u+'</div></div>':'';
+  h=eorder.map(function(ek){var L=egroups[ek],n=L.length,code=L[0].x.code,col=L[0].x.col;
+    var title=(t.et[code]||code)+(code==='need'?': '+colLabel(col):'');
+    var li=L.map(function(q){var nm=((q.res.v.fornamn||'')+' '+(q.res.v.efternamn||'')).trim(),det=q.x.p.v!==undefined&&q.x.p.v!==''?' <span class="muted">· '+esc(q.x.p.v)+'</span>':'';
+      return '<li><button type="button" class="link" data-goto="c-'+q.r.id+'-'+q.x.col+'">'+esc(t.row+' '+q.res.rowNo+' · '+nm)+'</button>'+det+'</li>'}).join('');
+    return '<div class="issue err group"><div class="txt"><span class="tag">'+t.err+'</span><b>'+esc(title)+' · '+esc(t.nrows(n))+'</b><details'+(n<=3?' open':'')+'><summary>'+esc(t.showRows(n))+'</summary><ul class="gl">'+li+'</ul></details></div></div>'});
+  var g=order.map(function(code){var L=groups[code],n=L.length,showV={lon_sane:1,slut_past:1,epost:1,bank_fmt:1,clr_fmt:1};
+    var li=L.map(function(q){var nm=((q.res.v.fornamn||'')+' '+(q.res.v.efternamn||'')).trim(),det=showV[code]&&q.x.p.v!==undefined?' <span class="muted">· '+esc(q.x.p.v)+'</span>':'';
+      return '<li><button type="button" class="link" data-goto="c-'+q.r.id+'-'+q.x.col+'">'+esc(t.row+' '+q.res.rowNo+' · '+nm)+'</button>'+det+(code==='slut_past'?' <button type="button" class="link" data-exc="'+q.r.id+'">'+esc(t.exclRow)+'</button>':'')+'</li>'}).join('');
+    var acts='<button type="button" class="btn" data-ackgroup="'+code+'">'+esc(code==='slut_past'?t.keepAll(n):t.ackAll(n))+'</button>'+(code==='slut_past'?'<button type="button" class="btn" data-excgroup="'+code+'">'+esc(t.exclAll(n))+'</button>':'');
+    return '<div class="issue warn group"><div class="txt"><span class="tag">'+t.warn+'</span><b>'+esc(t.gt[code])+' · '+esc(t.nrows(n))+'</b><div>'+esc(t.gh[code])+'</div><details'+(n<=3?' open':'')+'><summary>'+esc(t.showRows(n))+'</summary><ul class="gl">'+li+'</ul></details></div><div class="gact">'+acts+'</div></div>'}).join('');
+  $('issues').innerHTML=uh+h.join('')+g}
+function cellHtml(r,k,w){return '<td style="min-width:'+w+'px"><input type="text" id="c-'+r.id+'-'+k+'" data-r="'+r.id+'" data-k="'+k+'" value="'+esc(r.raw[k])+'" autocomplete="off" spellcheck="false" aria-label="'+esc(colLabel(k))+'"><div class="norm" id="n-'+r.id+'-'+k+'"></div></td>'}
+function renderTable(){
+  var t=T(),only=$('onlyProblems').checked,shown=0;
+  var head='<thead><tr><th>'+esc(t.with)+'</th><th>'+esc(t.row)+'</th>'+COLS.map(function(c){return '<th>'+esc(c[1][LANG])+'</th>'}).join('')+'<th>'+esc(t.stat)+'</th></tr></thead>';
+  var body=rows.map(function(r,i){
+    var res=results[i],prob=res.iss.some(function(x){return x.lvl==='e'||!x.acked});
+    if(only&&!prob&&r.inc)return '';shown++;
+    return '<tr id="tr-'+r.id+'"'+(r.inc?'':' class="out"')+'><td><input type="checkbox" data-inc="'+r.id+'"'+(r.inc?' checked':'')+' aria-label="'+esc(t.with)+' '+res.rowNo+'"></td><td>'+res.rowNo+'</td>'+
+      COLS.map(function(c){return cellHtml(r,c[0],c[2])}).join('')+'<td class="st" id="s-'+r.id+'"></td></tr>'}).join('');
+  $('tbl').innerHTML=head+'<tbody>'+body+'</tbody>';
+  $('shown').textContent=t.shown(shown,rows.length);paintTable()}
+function paintTable(){
+  var t=T();
+  rows.forEach(function(r,i){var res=results[i],tr=$('tr-'+r.id);if(!tr)return;
+    tr.className=r.inc?'':'out';
+    KEYS.forEach(function(k){var inp=$('c-'+r.id+'-'+k);if(!inp)return;
+      var e=res.iss.filter(function(x){return x.col===k&&x.lvl==='e'}).length,w=res.iss.filter(function(x){return x.col===k&&x.lvl==='w'&&!x.acked}).length;
+      inp.className=e?'err':(w?'warn':'');
+      $('n-'+r.id+'-'+k).textContent=res.norm[k]||''});
+    var st=[],e2=res.iss.filter(function(x){return x.lvl==='e'}),w2=res.iss.filter(function(x){return x.lvl==='w'&&!x.acked});
+    e2.forEach(function(x){st.push('<span class="e">'+t.err+'</span> '+esc(colLabel(x.col))+'')});
+    w2.forEach(function(x){st.push('<span class="w">'+t.warn+'</span> '+esc(colLabel(x.col)))});
+    $('s-'+r.id).innerHTML=st.length?st.join('<br>'):'<span class="o">'+t.okTxt+'</span>'})}
+function money(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function renderTotals(){
+  var t=T(),c=counts(),clear=c.tot>0&&c.e+c.w===0,sum=0,m=0,h=0,p=0,s=0,x=0;
+  rows.forEach(function(r,i){if(!r.inc){x++;return}var v=results[i].v;if(!clear)return;
+    if(v.hourly)h++;else{m++;sum+=v.lon||0}if(v.anstform==='Provanställning')p++;if(v.slutdatum)s++});
+  var sec=$('secC');sec.classList.toggle('locked',!clear);
+  function tile(n,l,key){return '<div class="tile'+(key?' key':'')+'"><b>'+esc(n)+'</b><span>'+esc(l)+'</span></div>'}
+  $('tiles').innerHTML=clear?tile(c.tot,t.t_n,1)+tile(money(sum),t.t_sum,1)+tile(m,t.t_m)+tile(h,t.t_h)+tile(p,t.t_p)+tile(s,t.t_s)+tile(x,t.t_x):tile('–',t.t_n)+tile('–',t.t_sum);
+  $('lblConfirm').textContent=clear?t.confirm(c.tot,money(sum)):t.confirm('–','–');
+  $('chkConfirm').disabled=!clear;if(!clear)$('chkConfirm').checked=false;
+  var ready=clear&&$('chkConfirm').checked;
+  $('bSave').disabled=!ready;$('bCopy').disabled=!ready;
+  $('fname').textContent=ready?fileName():'';
+  $('xmlout').value=ready?buildXml():''}
+function fileName(){var d=new Date();return 'personal_fortnox_'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.txt'}
+function refresh(full){
+  results=validateAll();renderSteps();renderBanner();renderIssues();renderTotals();
+  if(full)renderTable();else paintTable()}
+function load(list,msg){
+  rows=list.map(function(o){return {id:nextId++,raw:o,inc:true}});acks={};
+  $('secB').hidden=!rows.length;$('secC').hidden=!rows.length;
+  $('onlyProblems').checked=false;results=validateAll();refresh(true);
+  $('toastA').textContent=msg||'';
+  if(rows.length)$('secB').scrollIntoView({block:'start',behavior:'smooth'})}
+
+/* ---------- events ---------- */
+$('lsv').onclick=function(){setLang('sv')};$('len').onclick=function(){setLang('en')};
+function setLang(l){LANG=l;try{localStorage.setItem('paxml-lang',l)}catch(e){}setStatic();results=validateAll();refresh(true)}
+$('bCheck').onclick=function(){
+  var t=T(),p=parseTable($('paste').value);
+  if(!p.rows.length){$('toastA').textContent=t.empty;return}
+  var msg=t.loaded(p.rows.length)+' '+(p.hdr?t.hdrUsed:t.hdrNone)+(p.missing.length?' '+t.colsMissing(p.missing.join(', ')):'');
+  load(p.rows,msg)};
+$('bSample').onclick=function(){var t=T();$('paste').value='';load(sampleRows(),t.loaded(14))};
+$('bClear').onclick=function(){$('paste').value='';rows=[];results=[];acks={};$('secB').hidden=true;$('secC').hidden=true;$('toastA').textContent='';renderSteps()};
+$('bTemplate').onclick=async function(){
+  var t=T(),dl=await getDl();if(!dl){$('toastA').textContent=t.saveNA;return}
+  var head=COLS.map(function(c){return c[1].sv}).join(';');
+  try{await dl.save({filename:'paxml-mall.csv',data:'﻿'+head+'\n'});$('toastA').textContent=t.templateSaved}catch(e){$('toastA').textContent=(e&&e.code==='declined')?t.declined:t.saveNA}};
+$('onlyProblems').onchange=function(){renderTable()};
+$('chkConfirm').onchange=function(){renderTotals()};
+document.addEventListener('change',function(e){
+  var el=e.target;
+  if(el.dataset&&el.dataset.k){var r=rows.filter(function(q){return q.id==el.dataset.r})[0];if(r){r.raw[el.dataset.k]=el.value;refresh(false)}}
+  else if(el.dataset&&el.dataset.inc){var r2=rows.filter(function(q){return q.id==el.dataset.inc})[0];if(r2){r2.inc=el.checked;refresh(false)}}
+  else if(el.dataset&&el.dataset.ack){acks[el.dataset.ack]=el.checked;refresh(false)}
+  else if(el.dataset&&el.dataset.amap){if(el.value){anstMap[el.dataset.amap]=el.value;refresh(true)}}
+  else if(el.id==='impDate'){impDate=el.value||todayStr();refresh(true)}});
+function eachWarn(code,fn){rows.forEach(function(r,i){if(!r.inc)return;results[i].iss.forEach(function(x){if(x.lvl==='w'&&x.code===code&&!x.acked)fn(r,x)})})}
+document.addEventListener('click',function(e){
+  var bt=e.target.closest&&e.target.closest('[data-ackgroup],[data-excgroup],[data-exc]');
+  if(bt){
+    if(bt.dataset.ackgroup){eachWarn(bt.dataset.ackgroup,function(r,x){acks[x.id]=true});refresh(true)}
+    else if(bt.dataset.excgroup){var ids=[];eachWarn(bt.dataset.excgroup,function(r){ids.push(r)});ids.forEach(function(r){r.inc=false});refresh(true)}
+    else if(bt.dataset.exc){rows.forEach(function(r){if(r.id==bt.dataset.exc)r.inc=false});refresh(true)}
+    return}
+  var b=e.target.closest&&e.target.closest('[data-goto]');
+  if(b){var inp=$(b.dataset.goto);if(!inp){ $('onlyProblems').checked=false;renderTable();inp=$(b.dataset.goto)}if(inp){inp.scrollIntoView({block:'center',inline:'center'});inp.focus()}}});
+async function getDl(){try{return window.claude&&claude.use?await claude.use('downloads'):null}catch(e){return null}}
+$('bSave').onclick=async function(){
+  var t=T(),dl=await getDl();if(!dl){$('toastC').textContent=t.saveNA;return}
+  try{await dl.save({filename:fileName(),data:buildXml()});$('toastC').textContent=t.saved}
+  catch(e){$('toastC').textContent=(e&&e.code==='declined')?t.declined:t.saveNA}};
+$('bCopy').onclick=function(){
+  var t=T(),ta=$('xmlout'),txt=ta.value;
+  var fallback=function(){var d=document.querySelector('details');d.open=true;ta.focus();ta.select();$('toastC').textContent=t.copyFail};
+  try{navigator.clipboard.writeText(txt).then(function(){$('toastC').textContent=t.copied},fallback)}catch(e){fallback()}};
+
+setStatic();renderSteps();
+})();
+</script>
