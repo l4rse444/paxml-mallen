@@ -203,13 +203,13 @@ var S={
   loaded:function(n){return n+' rader inlästa.'},hdrUsed:'Rubrikrad hittad.',hdrNone:'Ingen rubrikrad hittad, mallens kolumnordning används.',
   templateSaved:'Mallen sparades.',
   lastRow:'Det finns inga fler rader.',
-  et:{need:'Obligatoriskt fält saknas',anr_dup:'Anställningsnummer används flera gånger',pnr_fmt:'Personnummer har fel antal siffror',pnr_chk:'Personnummer med fel kontrollsiffra',pnr_date:'Personnummer med ogiltigt datum',pnr_dup:'Personnummer används flera gånger',date:'Ogiltiga datum',slut_before:'Slutdatum före anställningsdatum',lon_bad:'Lön saknas eller är noll',grad_rng:'Sysselsättningsgrad utanför 1–100',tab:'Ogiltig skattetabell',kol:'Ogiltig skattekolumn',iban:'IBAN ser fel ut',pay_bad:'Okänd lönform'},
+  et:{dob_bad:'Födelsedatum är inget datum',dob_mis:'Födelsedatum stämmer inte med personnumret',need:'Obligatoriskt fält saknas',anr_dup:'Anställningsnummer används flera gånger',pnr_fmt:'Personnummer har fel antal siffror',pnr_chk:'Personnummer med fel kontrollsiffra',pnr_date:'Personnummer med ogiltigt datum',pnr_dup:'Personnummer används flera gånger',date:'Ogiltiga datum',slut_before:'Slutdatum före anställningsdatum',lon_bad:'Lön saknas eller är noll',grad_rng:'Sysselsättningsgrad utanför 1–100',tab:'Ogiltig skattetabell',kol:'Ogiltig skattekolumn',iban:'IBAN ser fel ut',pay_bad:'Okänd lönform'},
   lblImp:'Importdatum',pImp:'Slutdatum före detta datum flaggas, eftersom personen kanske inte behöver importeras. Ändra om du importerar en annan dag.',
   choose:'Välj…',nrows:function(n){return n+(n===1?' rad':' rader')},showRows:function(n){return 'Visa vilka '+n+(n===1?' rad':' rader')},
   ackAll:function(n){return n===1?'Jag har kontrollerat':'Jag har kontrollerat alla '+n},keepAll:function(n){return 'Ta med '+(n===1?'personen':'alla '+n)+' (slutlön)'},exclAll:function(n){return 'Utelämna '+(n===1?'personen':'alla '+n)},exclRow:'Utelämna',
   unkTitle:'Okända anställningsformer',unkHelp:'Välj vad varje värde ska bli i Fortnox. Valet gäller alla rader med samma värde.',
-  gt:{grad_tim:'Timanställda med sysselsättningsgrad',prov:'Provanställning utan slutdatum',lon_sane:'Ovanliga löner',epost:'E-postadresser som ser fel ut',pair:'Skattetabell utan skattekolumn',no_tax:'Skattetabell saknas',slut_past:'Slutdatum har redan passerat',bank_clr:'Clearingnummer saknas',bank_acc:'Kontonummer saknas',bank_none:'Bankuppgifter saknas',bank_fmt:'Kontonummer ser ovanligt ut',clr_fmt:'Clearingnummer ser ovanligt ut',pay_conf:'Anställningsform och lönform säger emot varandra'},
-  gh:{grad_tim:'Graden skrivs inte till filen, eftersom timlön inte har någon grad. Inget behöver rättas om det stämmer.',prov:'Kontrollera att provanställningen inte ska avslutas.',lon_sane:'Kontrollera beloppet och att lönformen (månad eller timme) stämmer.',epost:'Rätta adressen eller lämna fältet tomt.',pair:'Lägg in skattekolumn, annars sätter Fortnox den själv.',no_tax:'Hämtas ofta inte från personalsystemet. Lägg in tabell och kolumn i filen eller i Fortnox efter importen.',slut_past:'Ta med personen om slutlön eller slutavräkning ska köras. Annars utelämna.',bank_clr:'Utan clearingnummer går inte kontot att använda för utbetalning.',bank_acc:'Clearingnummer finns men inget kontonummer.',bank_none:'Utbetalning går inte att göra utan bankuppgifter. Lägg in dem i Fortnox.',bank_fmt:'Kontonummer har normalt 5–12 siffror.',clr_fmt:'Clearingnummer har 4 eller 5 siffror.',pay_conf:'Lönformen i listan används för filen. Kontrollera att den stämmer.'},
+  gt:{age_odd:'Ovanlig ålder vid anställningsstart',dob_samo:'Födelsedatum skiljer sig från samordningsnumret',grad_tim:'Timanställda med sysselsättningsgrad',prov:'Provanställning utan slutdatum',lon_sane:'Ovanliga löner',epost:'E-postadresser som ser fel ut',pair:'Skattetabell utan skattekolumn',no_tax:'Skattetabell saknas',slut_past:'Slutdatum har redan passerat',bank_clr:'Clearingnummer saknas',bank_acc:'Kontonummer saknas',bank_none:'Bankuppgifter saknas',bank_fmt:'Kontonummer ser ovanligt ut',clr_fmt:'Clearingnummer ser ovanligt ut',pay_conf:'Anställningsform och lönform säger emot varandra'},
+  gh:{age_odd:'Kontrollera personnumret och startdatumet.',dob_samo:'Samordningsnummer bygger ibland på ett ungefärligt födelsedatum. Kontrollera mot ID-handling.',grad_tim:'Graden skrivs inte till filen, eftersom timlön inte har någon grad. Inget behöver rättas om det stämmer.',prov:'Kontrollera att provanställningen inte ska avslutas.',lon_sane:'Kontrollera beloppet och att lönformen (månad eller timme) stämmer.',epost:'Rätta adressen eller lämna fältet tomt.',pair:'Lägg in skattekolumn, annars sätter Fortnox den själv.',no_tax:'Hämtas ofta inte från personalsystemet. Lägg in tabell och kolumn i filen eller i Fortnox efter importen.',slut_past:'Ta med personen om slutlön eller slutavräkning ska köras. Annars utelämna.',bank_clr:'Utan clearingnummer går inte kontot att använda för utbetalning.',bank_acc:'Clearingnummer finns men inget kontonummer.',bank_none:'Utbetalning går inte att göra utan bankuppgifter. Lägg in dem i Fortnox.',bank_fmt:'Kontonummer har normalt 5–12 siffror.',clr_fmt:'Clearingnummer har 4 eller 5 siffror.',pay_conf:'Lönformen i listan används för filen. Kontrollera att den stämmer.'},
 
   m:{
    need:function(p){return p.c+' saknas.'},
@@ -225,6 +225,10 @@ var S={
    pnr_chk:function(p){return 'Kontrollsiffran stämmer inte för '+p.v+'. Kontrollera mot ID-handling. Vanlig orsak: två siffror har bytt plats.'},
    pnr_date:function(p){return 'Födelsedatumet i personnumret är ogiltigt: '+p.v+'.'},
    pnr_dup:function(p){return 'Personnumret finns även på rad '+p.r+'.'},
+   dob_bad:function(p){return 'Födelsedatum är inte ett datum: '+p.v+'. Skriv ÅÅÅÅ-MM-DD.'},
+   dob_mis:function(p){return 'Födelsedatum '+p.v+' passar inte personnumret ('+p.p+'). Kontrollera att rätt person och rätt nummer är ihop.'},
+   dob_samo:function(p){return 'Födelsedatum '+p.v+' skiljer sig från samordningsnumret ('+p.p+').'},
+   age_odd:function(p){return 'Personen är '+p.a+' år vid anställningsstart.'},
    date:function(p){return p.c+' är inte ett datum: '+p.v+'. Skriv ÅÅÅÅ-MM-DD.'},
    slut_before:function(){return 'Slutdatum ligger före anställningsdatum.'},
    anstform:function(p){return 'Okänd anställningsform: '+p.v+'. Använd Tillsvidare, Visstid, Provanställning eller Timanställd.'},
@@ -264,13 +268,13 @@ var S={
   colsMissing:function(c){return 'Columns missing from the header row: '+c+'. They stay empty.'},
   loaded:function(n){return n+' rows read.'},hdrUsed:'Header row found.',hdrNone:'No header row found, template column order used.',
   templateSaved:'Template saved.',lastRow:'No more rows.',
-  et:{need:'Required field missing',anr_dup:'Employee number used more than once',pnr_fmt:'Personal ID number has the wrong number of digits',pnr_chk:'Personal ID number with wrong check digit',pnr_date:'Personal ID number with invalid date',pnr_dup:'Personal ID number used more than once',date:'Invalid dates',slut_before:'End date before start date',lon_bad:'Salary missing or zero',grad_rng:'Employment rate outside 1–100',tab:'Invalid tax table',kol:'Invalid tax column',iban:'IBAN looks wrong',pay_bad:'Unknown pay type'},
+  et:{dob_bad:'Date of birth is not a date',dob_mis:'Date of birth does not match the personal ID number',need:'Required field missing',anr_dup:'Employee number used more than once',pnr_fmt:'Personal ID number has the wrong number of digits',pnr_chk:'Personal ID number with wrong check digit',pnr_date:'Personal ID number with invalid date',pnr_dup:'Personal ID number used more than once',date:'Invalid dates',slut_before:'End date before start date',lon_bad:'Salary missing or zero',grad_rng:'Employment rate outside 1–100',tab:'Invalid tax table',kol:'Invalid tax column',iban:'IBAN looks wrong',pay_bad:'Unknown pay type'},
   lblImp:'Import date',pImp:'End dates before this date are flagged, because the person may not need to be imported. Change it if you import on another day.',
   choose:'Choose…',nrows:function(n){return n+(n===1?' row':' rows')},showRows:function(n){return 'Show the '+n+(n===1?' row':' rows')},
   ackAll:function(n){return n===1?'I have checked this':'I have checked all '+n},keepAll:function(n){return 'Include '+(n===1?'the person':'all '+n)+' (final pay)'},exclAll:function(n){return 'Leave out '+(n===1?'the person':'all '+n)},exclRow:'Leave out',
   unkTitle:'Unknown employment types',unkHelp:'Choose what each value becomes in Fortnox. The choice applies to every row with the same value.',
-  gt:{grad_tim:'Hourly employees with an employment rate',prov:'Probation without an end date',lon_sane:'Unusual salaries',epost:'E-mail addresses that look wrong',pair:'Tax table without tax column',no_tax:'Tax table missing',slut_past:'End date has already passed',bank_clr:'Clearing number missing',bank_acc:'Account number missing',bank_none:'Bank details missing',bank_fmt:'Account number looks unusual',clr_fmt:'Clearing number looks unusual',pay_conf:'Employment type and pay type disagree'},
-  gh:{grad_tim:'The rate is not written to the file, since hourly pay has no rate. Nothing to fix if this is expected.',prov:'Check that the probation should not end.',lon_sane:'Check the amount and that the pay type (monthly or hourly) is right.',epost:'Correct the address or leave the field empty.',pair:'Add the tax column, otherwise Fortnox sets it.',no_tax:'Often not available in the HR system. Add table and column in the file or in Fortnox after the import.',slut_past:'Include the person if final pay or settlement is still to be run. Otherwise leave out.',bank_clr:'Without a clearing number the account cannot be used for payment.',bank_acc:'A clearing number exists but no account number.',bank_none:'Payment is not possible without bank details. Add them in Fortnox.',bank_fmt:'Account numbers normally have 5–12 digits.',clr_fmt:'Clearing numbers have 4 or 5 digits.',pay_conf:'The pay type in the list is used for the file. Check that it is right.'},
+  gt:{age_odd:'Unusual age at start date',dob_samo:'Date of birth differs from the coordination number',grad_tim:'Hourly employees with an employment rate',prov:'Probation without an end date',lon_sane:'Unusual salaries',epost:'E-mail addresses that look wrong',pair:'Tax table without tax column',no_tax:'Tax table missing',slut_past:'End date has already passed',bank_clr:'Clearing number missing',bank_acc:'Account number missing',bank_none:'Bank details missing',bank_fmt:'Account number looks unusual',clr_fmt:'Clearing number looks unusual',pay_conf:'Employment type and pay type disagree'},
+  gh:{age_odd:'Check the ID number and the start date.',dob_samo:'Coordination numbers are sometimes based on an approximate birth date. Compare with an ID document.',grad_tim:'The rate is not written to the file, since hourly pay has no rate. Nothing to fix if this is expected.',prov:'Check that the probation should not end.',lon_sane:'Check the amount and that the pay type (monthly or hourly) is right.',epost:'Correct the address or leave the field empty.',pair:'Add the tax column, otherwise Fortnox sets it.',no_tax:'Often not available in the HR system. Add table and column in the file or in Fortnox after the import.',slut_past:'Include the person if final pay or settlement is still to be run. Otherwise leave out.',bank_clr:'Without a clearing number the account cannot be used for payment.',bank_acc:'A clearing number exists but no account number.',bank_none:'Payment is not possible without bank details. Add them in Fortnox.',bank_fmt:'Account numbers normally have 5–12 digits.',clr_fmt:'Clearing numbers have 4 or 5 digits.',pay_conf:'The pay type in the list is used for the file. Check that it is right.'},
 
   m:{
    need:function(p){return p.c+' is missing.'},
@@ -286,6 +290,10 @@ var S={
    pnr_chk:function(p){return 'The check digit is wrong for '+p.v+'. Compare with an ID document. Common cause: two digits swapped.'},
    pnr_date:function(p){return 'The birth date in the ID number is invalid: '+p.v+'.'},
    pnr_dup:function(p){return 'The same ID number is also on row '+p.r+'.'},
+   dob_bad:function(p){return 'Date of birth is not a date: '+p.v+'. Write YYYY-MM-DD.'},
+   dob_mis:function(p){return 'Date of birth '+p.v+' does not fit the ID number ('+p.p+'). Check that the right person and number belong together.'},
+   dob_samo:function(p){return 'Date of birth '+p.v+' differs from the coordination number ('+p.p+').'},
+   age_odd:function(p){return 'The person is '+p.a+' years old at the start date.'},
    date:function(p){return p.c+' is not a date: '+p.v+'. Write YYYY-MM-DD.'},
    slut_before:function(){return 'End date is before the start date.'},
    anstform:function(p){return 'Unknown employment type: '+p.v+'. Use Tillsvidare, Visstid, Provanställning or Timanställd.'},
@@ -322,7 +330,8 @@ var COLS=[
  ['skattetabell',{sv:'Skattetabell',en:'Tax table'},90,0,['skattetabell','taxtable','tabell']],
  ['skattekolumn',{sv:'Skattekol.',en:'Tax col.'},80,0,['skattekolumn','kolumn','taxcolumn']],
  ['clearing',{sv:'Clearingnr',en:'Clearing no.'},90,0,['clearing','clearingnr','clearingnummer','sortcode','bankclearing','sortcodeclearingnumber']],
- ['bankkonto',{sv:'Bankkonto / IBAN',en:'Bank account / IBAN'},170,0,['bankkonto','bankaccount','konto','iban']]
+ ['bankkonto',{sv:'Bankkonto / IBAN',en:'Bank account / IBAN'},170,0,['bankkonto','bankaccount','konto','iban']],
+ ['fodelsedatum',{sv:'Födelsedatum',en:'Date of birth'},110,0,['fodelsedatum','fodd','birthdate','dateofbirth','dob','birthday']]
 ];
 var KEYS=COLS.map(function(c){return c[0]});
 function colLabel(k){for(var i=0;i<COLS.length;i++)if(COLS[i][0]===k)return COLS[i][1][LANG];return k}
@@ -350,7 +359,7 @@ function parseTable(text){
   var map={},hits=0;
   grid[0].forEach(function(h,i){var n=nk(h);for(var c=0;c<COLS.length;c++){if((COLS[c][4].indexOf(n)>-1||nk(COLS[c][1].sv)===n||nk(COLS[c][1].en)===n)&&map[COLS[c][0]]===undefined){map[COLS[c][0]]=i;hits++;break}}});
   var hdr=hits>=4,data=grid,missing=[];
-  if(hdr){data=grid.slice(1);KEYS.forEach(function(k){if(map[k]===undefined)missing.push(colLabel(k))})}
+  if(hdr){data=grid.slice(1);KEYS.forEach(function(k){if(map[k]===undefined&&k!=='fodelsedatum')missing.push(colLabel(k))})}
   else{map={};KEYS.forEach(function(k,i){map[k]=i})}
   var out=data.map(function(r){var o={};KEYS.forEach(function(k){o[k]=map[k]===undefined?'':(r[map[k]]||'')});return o});
   return {rows:out,hdr:hdr,missing:missing}}
@@ -397,7 +406,7 @@ function validateAll(){
       else{var by=+d.slice(0,4),bm=+d.slice(4,6),bd=+d.slice(6,8);if(bd>60)bd-=60;
         if(!validYMD(by,bm,bd))add('e','personnr','pnr_date',{v:ps});
         else if(!luhn(d.slice(2)))add('e','personnr','pnr_chk',{v:ps});
-        else{v.personnr=d;if(d!==ps)norm.personnr='→ '+d;
+        else{v.personnr=d;v._by=by+'-'+pad(bm)+'-'+pad(bd);v._samo=(+d.slice(6,8))>60;if(d!==ps)norm.personnr='→ '+d;
           if(r.inc){if(seenP[d]!==undefined)add('e','personnr','pnr_dup',{r:seenP[d]});else seenP[d]=rowNo}}}}
     v.fornamn=raw.fornamn.trim();need('fornamn',raw.fornamn);
     v.efternamn=raw.efternamn.trim();need('efternamn',raw.efternamn);
@@ -416,6 +425,16 @@ function validateAll(){
     var sd=parseDate(raw.slutdatum);
     if(raw.slutdatum.trim()!==''){if(sd===false)add('e','slutdatum','date',{c:colLabel('slutdatum'),v:raw.slutdatum});else{v.slutdatum=sd;if(sd!==raw.slutdatum.trim())norm.slutdatum='→ '+sd;if(v.anstdatum&&sd<v.anstdatum)add('e','slutdatum','slut_before');else if(sd<impDate)add('w','slutdatum','slut_past',{v:sd})}}
     if(v.anstform==='Provanställning'&&!v.slutdatum&&raw.slutdatum.trim()==='')add('w','slutdatum','prov');
+    // birth date: cross-check with the personnummer (check only, never written to the file)
+    if(v._by){
+      var bdr=(raw.fodelsedatum||'').trim();
+      if(bdr!==''){var bdp=parseDate(bdr);
+        if(bdp===false)add('e','fodelsedatum','dob_bad',{v:bdr});
+        else{if(bdp!==bdr)norm.fodelsedatum='→ '+bdp;
+          if(bdp!==v._by)add(v._samo?'w':'e','fodelsedatum',v._samo?'dob_samo':'dob_mis',{v:bdp,p:v._by})}}
+      if(v.anstdatum){var sy=+v.anstdatum.slice(0,4),sm=+v.anstdatum.slice(5,7),sdd=+v.anstdatum.slice(8,10),by2=+v._by.slice(0,4),bm2=+v._by.slice(5,7),bd2=+v._by.slice(8,10);
+        var age=sy-by2-((sm<bm2||(sm===bm2&&sdd<bd2))?1:0);
+        if(age<16||age>75)add('w','personnr','age_odd',{a:age})}}
     // grad
     if(raw.grad.trim()!==''){var g=parseNum(raw.grad);
       if(!(g>=1&&g<=100))add('e','grad','grad_rng',{v:raw.grad});
