@@ -188,7 +188,7 @@ var S={
   hC:'Kontrollera och spara filen',pC:'Jämför antal och summa med kundens senaste lönekörning innan du sparar.',
   t_n:'anställda',t_sum:'kr månadslön, summa',t_m:'månadsanställda',t_h:'timanställda',t_p:'provanställda',t_s:'med slutdatum',t_x:'rader utelämnade',
   confirm:function(n,s){return 'Jag har jämfört antal ('+n+') och månadslönesumma ('+s+' kr) med kundens senaste lönekörning.'},
-  save:'Spara PAXml-fil',copy:'Kopiera XML',saved:'Filen sparades. Byt ändelsen från .txt till .xml innan du importerar den (testversionen kan inte spara .xml direkt).',
+  save:'Spara PAXml-fil',savedXml:'Filen sparades som .xml i din hämtningsmapp. Importera den i Fortnox Lön.',copy:'Kopiera XML',saved:'Filen sparades. Byt ändelsen från .txt till .xml innan du importerar den (testversionen kan inte spara .xml direkt).',
   declined:'Sparandet avbröts.',saveNA:'Det går inte att spara filer här. Använd Kopiera XML i stället.',copied:'XML kopierad.',copyFail:'Kunde inte kopiera automatiskt. Texten är markerad, tryck Ctrl+C.',
   sumXml:'Visa XML-koden (behövs normalt inte)',
   limits:'Filen innehåller personuppgifter, anställning, lön och bankkonto. Semestersaldo, årets ackumulerade värden och arbetstidsschema skrivs inte, och läggs in i Fortnox efter importen. Strukturen är byggd efter PAXml 2.2-schemat men inte testad i Fortnox.',
@@ -250,7 +250,7 @@ var S={
   hC:'Check and save the file',pC:'Compare the count and total with the client\'s latest payroll run before you save.',
   t_n:'employees',t_sum:'SEK monthly salary, total',t_m:'monthly paid',t_h:'hourly paid',t_p:'on probation',t_s:'with end date',t_x:'rows left out',
   confirm:function(n,s){return 'I compared the count ('+n+') and monthly salary total ('+s+' SEK) with the client\'s latest payroll run.'},
-  save:'Save PAXml file',copy:'Copy XML',saved:'File saved. Change the extension from .txt to .xml before you import it (the test version cannot save .xml directly).',
+  save:'Save PAXml file',savedXml:'The file was saved as .xml in your downloads folder. Import it in Fortnox Lön.',copy:'Copy XML',saved:'File saved. Change the extension from .txt to .xml before you import it (the test version cannot save .xml directly).',
   declined:'Saving was cancelled.',saveNA:'Files cannot be saved here. Use Copy XML instead.',copied:'XML copied.',copyFail:'Could not copy automatically. The text is selected, press Ctrl+C.',
   sumXml:'Show the XML (not normally needed)',
   limits:'The file contains personal data, employment, salary and bank account. Holiday balances, year-to-date totals and work schedules are not written; enter them in Fortnox after the import. The structure follows the PAXml 2.2 schema but has not been tested in Fortnox.',
@@ -640,7 +640,12 @@ document.addEventListener('click',function(e){
   if(b){var inp=$(b.dataset.goto);if(!inp){ $('onlyProblems').checked=false;renderTable();inp=$(b.dataset.goto)}if(inp){inp.scrollIntoView({block:'center',inline:'center'});inp.focus()}}});
 async function getDl(){try{return window.claude&&claude.use?await claude.use('downloads'):null}catch(e){return null}}
 $('bSave').onclick=async function(){
-  var t=T(),dl=await getDl();if(!dl){$('toastC').textContent=t.saveNA;return}
+  var t=T(),dl=await getDl();
+  if(!dl){ /* normal web page: a plain download, saved as .xml */
+    try{var bl=new Blob([buildXml()],{type:'application/xml;charset=utf-8'}),u=URL.createObjectURL(bl),a=document.createElement('a');
+      a.href=u;a.download=fileName().replace(/\.txt$/,'.xml');document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);
+      $('toastC').textContent=t.savedXml}catch(e){$('toastC').textContent=t.saveNA}
+    return}
   try{await dl.save({filename:fileName(),data:buildXml()});$('toastC').textContent=t.saved}
   catch(e){$('toastC').textContent=(e&&e.code==='declined')?t.declined:t.saveNA}};
 $('bCopy').onclick=function(){
