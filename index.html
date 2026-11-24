@@ -96,6 +96,11 @@ td.st .e{color:var(--err);font-weight:600}td.st .w{color:var(--warn);font-weight
 .confirm input{margin-top:4px}
 .locked{opacity:.55}
 details summary{cursor:pointer;font-size:13px;color:var(--accent)}
+textarea#paste.drag{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+#dropz{position:relative}
+#dropz .dropmsg{display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-weight:600;color:var(--accent);pointer-events:none;border-radius:6px}
+#dropz.drag .dropmsg{display:flex}
+#dropz.drag textarea{color:transparent}
 textarea#xmlout{width:100%;height:220px;margin-top:8px;font:12px/1.4 var(--mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px}
 .toast{font-size:13px;min-height:20px}
 footer{font-size:12px;color:var(--muted)}
@@ -120,9 +125,11 @@ footer{font-size:12px;color:var(--muted)}
     <h2 id="hA"></h2>
     <div class="note" id="noteTest"></div>
     <label for="paste" id="lblPaste" style="font-weight:600"></label>
-    <textarea id="paste" spellcheck="false"></textarea>
+    <div id="dropz"><textarea id="paste" spellcheck="false"></textarea><div class="dropmsg" id="dropMsg" aria-hidden="true"></div></div>
+    <input type="file" id="fileIn" accept=".csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values" hidden>
     <div class="row">
       <button type="button" class="btn primary" id="bCheck"></button>
+      <button type="button" class="btn" id="bFile"></button>
       <button type="button" class="btn" id="bSample"></button>
       <button type="button" class="btn" id="bTemplate"></button>
       <button type="button" class="link" id="bClear"></button>
@@ -175,7 +182,8 @@ var S={
   hA:'Lägg in personallistan',noteTest:'Testversion. Använd bara påhittad data här. Filen är inte testad mot Fortnox ännu.',
   lblPaste:'Klistra in tabellen här (Ctrl+V från Excel, inklusive rubrikraden)',
   check:'Kontrollera listan',sample:'Prova med exempeldata (14 påhittade anställda)',tmpl:'Spara tom mall (.csv)',clear:'Rensa',
-  hint:'Kolumnerna matchas på rubrikerna. Saknas rubrikrad används mallens ordning. Tab, semikolon och komma fungerar som avskiljare.',
+  chooseFile:'Välj fil…',dropHere:'Släpp filen här',fileRead:function(n){return 'Läste in '+n+'.'},fileBad:'Filen kunde inte läsas. Använd en CSV-, TSV- eller textfil (i Excel: Spara som → CSV).',fileXls:'Excel-filer kan inte läsas ännu. I Excel: Arkiv → Spara som → CSV (semikolonavgränsad), och släpp den filen här.',
+  hint:'Du kan släppa en fil i rutan eller klistra in. Kolumnerna matchas på rubrikerna. Saknas rubrikrad används mallens ordning. Tab, semikolon och komma fungerar som avskiljare.',
   hB:'Rätta fel och bekräfta varningar',onlyP:'Visa bara rader med problem',legend:'Heldragen röd kant = fel. Streckad gul kant = varning. Texten under ett värde visar hur det skrivs i filen. Bocka ur "Med" för att lämna en rad utanför filen.',
   hC:'Kontrollera och spara filen',pC:'Jämför antal och summa med kundens senaste lönekörning innan du sparar.',
   t_n:'anställda',t_sum:'kr månadslön, summa',t_m:'månadsanställda',t_h:'timanställda',t_p:'provanställda',t_s:'med slutdatum',t_x:'rader utelämnade',
@@ -236,7 +244,8 @@ var S={
   hA:'Add the staff list',noteTest:'Test version. Use made-up data only. The file has not been tested against Fortnox yet.',
   lblPaste:'Paste the table here (Ctrl+V from Excel, including the header row)',
   check:'Check the list',sample:'Try example data (14 made-up employees)',tmpl:'Save blank template (.csv)',clear:'Clear',
-  hint:'Columns are matched on the headers. Without a header row the template order is used. Tab, semicolon and comma all work as separators.',
+  chooseFile:'Choose file…',dropHere:'Drop the file here',fileRead:function(n){return 'Read '+n+'.'},fileBad:'The file could not be read. Use a CSV, TSV or text file (in Excel: Save as → CSV).',fileXls:'Excel files cannot be read yet. In Excel: File → Save as → CSV (semicolon separated), then drop that file here.',
+  hint:'You can drop a file onto the box or paste. Columns are matched on the headers. Without a header row the template order is used. Tab, semicolon and comma all work as separators.',
   hB:'Fix errors and confirm warnings',onlyP:'Show only rows with problems',legend:'Solid red border = error. Dashed yellow border = warning. The text under a value shows how it is written to the file. Untick "Incl." to leave a row out of the file.',
   hC:'Check and save the file',pC:'Compare the count and total with the client\'s latest payroll run before you save.',
   t_n:'employees',t_sum:'SEK monthly salary, total',t_m:'monthly paid',t_h:'hourly paid',t_p:'on probation',t_s:'with end date',t_x:'rows left out',
@@ -484,7 +493,7 @@ function setStatic(){
   $('pillTest').textContent=t.test;$('pillTarget').textContent=t.target;$('offline').textContent=t.offline;
   $('lsv').setAttribute('aria-pressed',LANG==='sv');$('len').setAttribute('aria-pressed',LANG==='en');
   $('hA').textContent=t.hA;$('noteTest').textContent=t.noteTest;$('lblPaste').textContent=t.lblPaste;
-  $('bCheck').textContent=t.check;$('bSample').textContent=t.sample;$('bTemplate').textContent=t.tmpl;$('bClear').textContent=t.clear;$('pHint').textContent=t.hint;
+  $('bCheck').textContent=t.check;$('bFile').textContent=t.chooseFile;$('dropMsg').textContent=t.dropHere;$('bSample').textContent=t.sample;$('bTemplate').textContent=t.tmpl;$('bClear').textContent=t.clear;$('pHint').textContent=t.hint;
   $('hB').textContent=t.hB;$('lblImp').textContent=t.lblImp;$('pImp').textContent=t.pImp;$('impDate').value=impDate;$('lblOnly').textContent=t.onlyP;$('legend').textContent=t.legend;
   $('hC').textContent=t.hC;$('pC').textContent=t.pC;$('bSave').textContent=t.save;$('bCopy').textContent=t.copy;$('sumXml').textContent=t.sumXml;$('pLimits').textContent=t.limits;$('foot').textContent=t.foot}
 function renderSteps(){
@@ -580,6 +589,30 @@ $('bCheck').onclick=function(){
   if(!p.rows.length){$('toastA').textContent=t.empty;return}
   var msg=t.loaded(p.rows.length)+' '+(p.hdr?t.hdrUsed:t.hdrNone)+(p.missing.length?' '+t.colsMissing(p.missing.join(', ')):'');
   load(p.rows,msg)};
+function readFile(f){
+  var t=T();if(!f)return;
+  if(/\.(xlsx|xlsm|xls|ods|numbers)$/i.test(f.name)){$('toastA').textContent=t.fileXls;return}
+  if(f.size>5*1024*1024){$('toastA').textContent=t.fileBad;return}
+  var r=new FileReader();
+  r.onerror=function(){$('toastA').textContent=t.fileBad};
+  r.onload=function(){
+    var b=r.result,txt;
+    try{txt=new TextDecoder('utf-8',{fatal:true}).decode(b)}catch(e){try{txt=new TextDecoder('windows-1252').decode(b)}catch(e2){$('toastA').textContent=t.fileBad;return}}
+    if(txt.charCodeAt(0)===0xFEFF)txt=txt.slice(1);
+    if(txt.indexOf('\u0000')>-1||!txt.trim()){$('toastA').textContent=t.fileBad;return}
+    $('paste').value=txt;$('bCheck').click();
+    if($('toastA').textContent)$('toastA').textContent=t.fileRead(f.name)+' '+$('toastA').textContent}
+  r.readAsArrayBuffer(f)}
+$('bFile').onclick=function(){$('fileIn').click()};
+$('fileIn').onchange=function(){readFile(this.files[0]);this.value=''};
+(function(){var z=$('dropz'),n=0;
+  function has(e){var d=e.dataTransfer;return d&&Array.prototype.indexOf.call(d.types||[],'Files')>-1}
+  ['dragenter','dragover'].forEach(function(ev){z.addEventListener(ev,function(e){if(!has(e))return;e.preventDefault();e.dataTransfer.dropEffect='copy';z.classList.add('drag')})});
+  z.addEventListener('dragleave',function(e){if(!z.contains(e.relatedTarget))z.classList.remove('drag')});
+  z.addEventListener('drop',function(e){if(!has(e))return;e.preventDefault();z.classList.remove('drag');readFile(e.dataTransfer.files[0])});
+  /* a file dropped outside the box must not make the browser open it and leave the tool */
+  ['dragover','drop'].forEach(function(ev){window.addEventListener(ev,function(e){if(has(e))e.preventDefault()})})
+})();
 $('bSample').onclick=function(){var t=T();$('paste').value='';load(sampleRows(),t.loaded(14))};
 $('bClear').onclick=function(){$('paste').value='';rows=[];results=[];acks={};$('secB').hidden=true;$('secC').hidden=true;$('toastA').textContent='';renderSteps()};
 $('bTemplate').onclick=async function(){
