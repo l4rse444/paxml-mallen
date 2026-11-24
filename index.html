@@ -199,7 +199,7 @@ var S={
   empty:'Inga rader hittades. Klistra in tabellen först.',
   shown:function(a,b){return 'Visar '+a+' av '+b+' rader'},goto:'Gå till cellen',ack:'Jag har kontrollerat',
   need:'Fel',warn:'VARNING',err:'FEL',row:'Rad',with:'Med',stat:'Status',okTxt:'OK',
-  colsMissing:function(c){return 'Kolumner som saknas i rubrikraden: '+c+'. De fylls inte i.'},
+  colsMissing:function(c){return 'Kolumner som saknas i rubrikraden: '+c.replace(/\.$/,'')+'. De fylls inte i.'},
   loaded:function(n){return n+' rader inlästa.'},hdrUsed:'Rubrikrad hittad.',hdrNone:'Ingen rubrikrad hittad, mallens kolumnordning används.',
   templateSaved:'Mallen sparades.',
   lastRow:'Det finns inga fler rader.',
@@ -265,7 +265,7 @@ var S={
   empty:'No rows found. Paste the table first.',
   shown:function(a,b){return 'Showing '+a+' of '+b+' rows'},goto:'Go to cell',ack:'I have checked this',
   need:'Error',warn:'WARNING',err:'ERROR',row:'Row',with:'Incl.',stat:'Status',okTxt:'OK',
-  colsMissing:function(c){return 'Columns missing from the header row: '+c+'. They stay empty.'},
+  colsMissing:function(c){return 'Columns missing from the header row: '+c.replace(/\.$/,'')+'. They stay empty.'},
   loaded:function(n){return n+' rows read.'},hdrUsed:'Header row found.',hdrNone:'No header row found, template column order used.',
   templateSaved:'Template saved.',lastRow:'No more rows.',
   et:{dob_bad:'Date of birth is not a date',dob_mis:'Date of birth does not match the personal ID number',need:'Required field missing',anr_dup:'Employee number used more than once',pnr_fmt:'Personal ID number has the wrong number of digits',pnr_chk:'Personal ID number with wrong check digit',pnr_date:'Personal ID number with invalid date',pnr_dup:'Personal ID number used more than once',date:'Invalid dates',slut_before:'End date before start date',lon_bad:'Salary missing or zero',grad_rng:'Employment rate outside 1–100',tab:'Invalid tax table',kol:'Invalid tax column',iban:'IBAN looks wrong',pay_bad:'Unknown pay type'},
@@ -314,23 +314,23 @@ function T(){return S[LANG]}
 /* ---------- columns ---------- */
 var COLS=[
  ['anstnr',{sv:'Anst.nr',en:'Employee no.'},84,1,['anstnr','anstallningsnummer','anstallningsnr','employeeid','employeenumber','nr']],
- ['personnr',{sv:'Personnummer',en:'Personal ID no.'},150,1,['personnummer','personnr','pnr','ssn']],
+ ['personnr',{sv:'Personnummer',en:'Personal ID no.'},150,1,['personnummer','personnr','pnr','ssn','nationalid','nationalidnumber','socialsecuritynumber']],
  ['fornamn',{sv:'Förnamn',en:'First name'},110,1,['fornamn','firstname','givenname']],
  ['efternamn',{sv:'Efternamn',en:'Last name'},120,1,['efternamn','lastname','surname']],
- ['postadress',{sv:'Postadress',en:'Address'},150,0,['postadress','adress','gatuadress','address']],
- ['postnr',{sv:'Postnr',en:'Postcode'},80,0,['postnr','postnummer','zip','postalcode']],
+ ['postadress',{sv:'Postadress',en:'Address'},150,0,['postadress','adress','gatuadress','address','addressline1','streetaddress','street']],
+ ['postnr',{sv:'Postnr',en:'Postcode'},80,0,['postnr','postnummer','zip','postalcode','postcode','zipcode']],
  ['ort',{sv:'Ort',en:'City'},110,0,['ort','stad','city']],
- ['epost',{sv:'E-post',en:'E-mail'},180,0,['epost','epostadress','email','mail']],
+ ['epost',{sv:'E-post',en:'E-mail'},180,0,['epost','epostadress','email','mail','personalemail','workemail']],
  ['anstform',{sv:'Anställningsform',en:'Employment type'},140,1,['anstallningsform','anstform','form','employmenttype']],
  ['anstdatum',{sv:'Anst.datum',en:'Start date'},110,1,['anstallningsdatum','anstdatum','startdatum','startdate','hiredate']],
- ['slutdatum',{sv:'Slutdatum',en:'End date'},110,0,['slutdatum','avgdatum','enddate']],
+ ['slutdatum',{sv:'Slutdatum',en:'End date'},110,0,['slutdatum','avgdatum','enddate','terminationdate','leavedate','lastday']],
  ['grad',{sv:'Grad',en:'Rate'},70,0,['sysselsattningsgrad','grad','employmentrate','fte']],
- ['lon',{sv:'Lön',en:'Salary'},110,1,['lon','manadslon','timlon','salary']],
+ ['lon',{sv:'Lön',en:'Salary'},110,1,['lon','manadslon','timlon','salary','basesalary']],
  ['lonform',{sv:'Lönform',en:'Pay type'},100,0,['lonform','lonetyp','paytype','salarypaytype','payperiod','lonperiod','salarypayperiod']],
  ['skattetabell',{sv:'Skattetabell',en:'Tax table'},90,0,['skattetabell','taxtable','tabell']],
  ['skattekolumn',{sv:'Skattekol.',en:'Tax col.'},80,0,['skattekolumn','kolumn','taxcolumn']],
  ['clearing',{sv:'Clearingnr',en:'Clearing no.'},90,0,['clearing','clearingnr','clearingnummer','sortcode','bankclearing','sortcodeclearingnumber']],
- ['bankkonto',{sv:'Bankkonto / IBAN',en:'Bank account / IBAN'},170,0,['bankkonto','bankaccount','konto','iban']],
+ ['bankkonto',{sv:'Bankkonto / IBAN',en:'Bank account / IBAN'},170,0,['bankkonto','bankaccount','konto','iban','accountnumber','bankaccountnumber']],
  ['fodelsedatum',{sv:'Födelsedatum',en:'Date of birth'},110,0,['fodelsedatum','fodd','birthdate','dateofbirth','dob','birthday']]
 ];
 var KEYS=COLS.map(function(c){return c[0]});
@@ -357,7 +357,7 @@ function parseTable(text){
   [';',','].forEach(function(c){var n=(f.match(new RegExp(c==='.'?'\\.':c,'g'))||[]).length;if(n>best){best=n;d=c}});
   var grid=lines.map(function(l){return splitLine(l,d).map(function(x){return x.trim()})});
   var map={},hits=0;
-  grid[0].forEach(function(h,i){var n=nk(h);for(var c=0;c<COLS.length;c++){if((COLS[c][4].indexOf(n)>-1||nk(COLS[c][1].sv)===n||nk(COLS[c][1].en)===n)&&map[COLS[c][0]]===undefined){map[COLS[c][0]]=i;hits++;break}}});
+  grid[0].forEach(function(h,i){var n=nk(String(h).replace(/\(\s*(mandatory|required|obligatoriskt)\s*\)/ig,''));for(var c=0;c<COLS.length;c++){if((COLS[c][4].indexOf(n)>-1||nk(COLS[c][1].sv)===n||nk(COLS[c][1].en)===n)&&map[COLS[c][0]]===undefined){map[COLS[c][0]]=i;hits++;break}}});
   var hdr=hits>=4,data=grid,missing=[];
   if(hdr){data=grid.slice(1);KEYS.forEach(function(k){if(map[k]===undefined&&k!=='fodelsedatum')missing.push(colLabel(k))})}
   else{map={};KEYS.forEach(function(k,i){map[k]=i})}
@@ -374,7 +374,8 @@ function parseDate(s){
   if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/))){return validYMD(+m[1],+m[2],+m[3])?s:false}
   if((m=s.match(/^(\d{4})(\d{2})(\d{2})$/))){return validYMD(+m[1],+m[2],+m[3])?m[1]+'-'+m[2]+'-'+m[3]:false}
   if((m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/))){return validYMD(+m[3],+m[2],+m[1])?m[3]+'-'+pad(+m[2])+'-'+pad(+m[1]):false}
-  if(/^\d{5}$/.test(s)){var dt=new Date(Date.UTC(1899,11,30)+(+s)*86400000);return dt.getUTCFullYear()+'-'+pad(dt.getUTCMonth()+1)+'-'+pad(dt.getUTCDate())}
+  if((m=s.match(/^(\d{4}-\d{2}-\d{2})[ T]00:00(:00)?(\.0+)?$/)))return parseDate(m[1]);
+  if(/^\d{5}(\.0+)?$/.test(s)){var dt=new Date(Date.UTC(1899,11,30)+Math.floor(+s)*86400000);return dt.getUTCFullYear()+'-'+pad(dt.getUTCMonth()+1)+'-'+pad(dt.getUTCDate())}
   return false}
 function parseNum(s){
   var t=String(s).replace(/ /g,' ').toLowerCase().replace(/kr|sek|\/tim|\/h|%|\s/g,'').replace(',','.');
@@ -646,7 +647,7 @@ async function readXlsx(buf){
       else if(ty==='inlineStr')val=Array.prototype.map.call(c.getElementsByTagName('t'),function(x){return x.textContent}).join('');
       else if(ty==='b')val=v&&v.textContent==='1'?'TRUE':'FALSE';
       else if(ty==='e')val='';
-      else val=v?v.textContent:'';
+      else{val=v?v.textContent:'';if(/^-?\d+\.0+$/.test(val))val=val.replace(/\.0+$/,'')}
       cells[ci]=String(val).replace(/[\t\r\n]+/g,' ');if(ci+1>maxc)maxc=ci+1}
     var ri=(rn||out.length+1)-1;while(out.length<ri)out.push([]);out[ri]=cells}
   var lines=out.map(function(r){var a=[];for(var k=0;k<maxc;k++)a.push(r[k]===undefined?'':r[k]);return a.join('\t')});
