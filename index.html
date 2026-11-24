@@ -126,7 +126,7 @@ footer{font-size:12px;color:var(--muted)}
     <div class="note" id="noteTest"></div>
     <label for="paste" id="lblPaste" style="font-weight:600"></label>
     <div id="dropz"><textarea id="paste" spellcheck="false"></textarea><div class="dropmsg" id="dropMsg" aria-hidden="true"></div></div>
-    <input type="file" id="fileIn" accept=".csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values" hidden>
+    <input type="file" id="fileIn" accept=".xlsx,.xlsm,.csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values" hidden>
     <div class="row">
       <button type="button" class="btn primary" id="bCheck"></button>
       <button type="button" class="btn" id="bFile"></button>
@@ -182,8 +182,8 @@ var S={
   hA:'Lägg in personallistan',noteTest:'Testversion. Använd bara påhittad data här. Filen är inte testad mot Fortnox ännu.',
   lblPaste:'Klistra in tabellen här (Ctrl+V från Excel, inklusive rubrikraden)',
   check:'Kontrollera listan',sample:'Prova med exempeldata (14 påhittade anställda)',tmpl:'Spara tom mall (.csv)',clear:'Rensa',
-  chooseFile:'Välj fil…',dropHere:'Släpp filen här',fileRead:function(n){return 'Läste in '+n+'.'},fileBad:'Filen kunde inte läsas. Använd en CSV-, TSV- eller textfil (i Excel: Spara som → CSV).',fileXls:'Excel-filer kan inte läsas ännu. I Excel: Arkiv → Spara som → CSV (semikolonavgränsad), och släpp den filen här.',
-  hint:'Du kan släppa en fil i rutan eller klistra in. Kolumnerna matchas på rubrikerna. Saknas rubrikrad används mallens ordning. Tab, semikolon och komma fungerar som avskiljare.',
+  chooseFile:'Välj fil…',dropHere:'Släpp filen här',fileRead:function(n){return 'Läste in '+n+'.'},fileBad:'Filen kunde inte läsas. Använd en Excel- (.xlsx), CSV-, TSV- eller textfil.',fileXls:'Det här filformatet kan inte läsas. Spara om filen som .xlsx eller CSV (i Excel: Arkiv → Spara som) och släpp den här.',xlsRead:function(n,sh){return 'Läste in '+n+' (blad: '+sh+').'},
+  hint:'Du kan släppa en Excel- eller CSV-fil i rutan, eller klistra in. Kolumnerna matchas på rubrikerna. Saknas rubrikrad används mallens ordning. Tab, semikolon och komma fungerar som avskiljare.',
   hB:'Rätta fel och bekräfta varningar',onlyP:'Visa bara rader med problem',legend:'Heldragen röd kant = fel. Streckad gul kant = varning. Texten under ett värde visar hur det skrivs i filen. Bocka ur "Med" för att lämna en rad utanför filen.',
   hC:'Kontrollera och spara filen',pC:'Jämför antal och summa med kundens senaste lönekörning innan du sparar.',
   t_n:'anställda',t_sum:'kr månadslön, summa',t_m:'månadsanställda',t_h:'timanställda',t_p:'provanställda',t_s:'med slutdatum',t_x:'rader utelämnade',
@@ -244,8 +244,8 @@ var S={
   hA:'Add the staff list',noteTest:'Test version. Use made-up data only. The file has not been tested against Fortnox yet.',
   lblPaste:'Paste the table here (Ctrl+V from Excel, including the header row)',
   check:'Check the list',sample:'Try example data (14 made-up employees)',tmpl:'Save blank template (.csv)',clear:'Clear',
-  chooseFile:'Choose file…',dropHere:'Drop the file here',fileRead:function(n){return 'Read '+n+'.'},fileBad:'The file could not be read. Use a CSV, TSV or text file (in Excel: Save as → CSV).',fileXls:'Excel files cannot be read yet. In Excel: File → Save as → CSV (semicolon separated), then drop that file here.',
-  hint:'You can drop a file onto the box or paste. Columns are matched on the headers. Without a header row the template order is used. Tab, semicolon and comma all work as separators.',
+  chooseFile:'Choose file…',dropHere:'Drop the file here',fileRead:function(n){return 'Read '+n+'.'},fileBad:'The file could not be read. Use an Excel (.xlsx), CSV, TSV or text file.',fileXls:'This file format cannot be read. Save the file again as .xlsx or CSV (in Excel: File → Save as) and drop it here.',xlsRead:function(n,sh){return 'Read '+n+' (sheet: '+sh+').'},
+  hint:'You can drop an Excel or CSV file onto the box, or paste. Columns are matched on the headers. Without a header row the template order is used. Tab, semicolon and comma all work as separators.',
   hB:'Fix errors and confirm warnings',onlyP:'Show only rows with problems',legend:'Solid red border = error. Dashed yellow border = warning. The text under a value shows how it is written to the file. Untick "Incl." to leave a row out of the file.',
   hC:'Check and save the file',pC:'Compare the count and total with the client\'s latest payroll run before you save.',
   t_n:'employees',t_sum:'SEK monthly salary, total',t_m:'monthly paid',t_h:'hourly paid',t_p:'on probation',t_s:'with end date',t_x:'rows left out',
@@ -589,9 +589,59 @@ $('bCheck').onclick=function(){
   if(!p.rows.length){$('toastA').textContent=t.empty;return}
   var msg=t.loaded(p.rows.length)+' '+(p.hdr?t.hdrUsed:t.hdrNone)+(p.missing.length?' '+t.colsMissing(p.missing.join(', ')):'');
   load(p.rows,msg)};
+/* Minimal .xlsx reader: zip + XML, no libraries, nothing leaves the browser. Returns {tsv, sheet}. */
+async function inflateRaw(u8){var ds=new DecompressionStream('deflate-raw'),w=ds.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(ds.readable).arrayBuffer())}
+async function unzip(buf){
+  var dv=new DataView(buf),u8=new Uint8Array(buf),i=u8.length-22;
+  while(i>=0&&dv.getUint32(i,true)!==0x06054b50)i--;
+  if(i<0)throw new Error('zip');
+  var n=dv.getUint16(i+10,true),off=dv.getUint32(i+16,true),files={},dec=new TextDecoder();
+  for(var k=0;k<n;k++){
+    if(dv.getUint32(off,true)!==0x02014b50)throw new Error('zip');
+    var meth=dv.getUint16(off+10,true),csz=dv.getUint32(off+20,true),nl=dv.getUint16(off+28,true),el=dv.getUint16(off+30,true),cl=dv.getUint16(off+32,true),lh=dv.getUint32(off+42,true);
+    var name=dec.decode(u8.subarray(off+46,off+46+nl));
+    var lnl=dv.getUint16(lh+26,true),lel=dv.getUint16(lh+28,true),st=lh+30+lnl+lel,data=u8.subarray(st,st+csz);
+    files[name]={meth:meth,data:data};off+=46+nl+el+cl}
+  return files}
+async function zText(files,name){var f=files[name];if(!f)return null;var d=f.meth===0?f.data:await inflateRaw(f.data);return new TextDecoder('utf-8').decode(d)}
+function colIdx(ref){var m=/^([A-Z]+)/.exec(ref),c=0;for(var i=0;i<m[1].length;i++)c=c*26+m[1].charCodeAt(i)-64;return c-1}
+async function readXlsx(buf){
+  var files=await unzip(buf),P=new DOMParser();
+  function xml(t){var d=P.parseFromString(t,'application/xml');if(d.getElementsByTagName('parsererror').length)throw new Error('xml');return d}
+  var wb=xml(await zText(files,'xl/workbook.xml')),sheets=wb.getElementsByTagName('sheet'),sh=null;
+  for(var i=0;i<sheets.length;i++){if(sheets[i].getAttribute('state')!=='hidden'&&sheets[i].getAttribute('state')!=='veryHidden'){sh=sheets[i];break}}
+  if(!sh)throw new Error('nosheet');
+  var rid=sh.getAttribute('r:id')||sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id'),path=null;
+  var rels=xml(await zText(files,'xl/_rels/workbook.xml.rels')).getElementsByTagName('Relationship');
+  for(i=0;i<rels.length;i++)if(rels[i].getAttribute('Id')===rid){path=rels[i].getAttribute('Target');break}
+  if(!path)throw new Error('nosheet');
+  path=path.charAt(0)==='/'?path.slice(1):'xl/'+path;
+  var sst=[],sx=await zText(files,'xl/sharedStrings.xml');
+  if(sx){var si=xml(sx).getElementsByTagName('si');for(i=0;i<si.length;i++){var ts=si[i].getElementsByTagName('t'),str='';for(var j=0;j<ts.length;j++){if(ts[j].parentNode.nodeName!=='rPh')str+=ts[j].textContent}sst.push(str)}}
+  var sheet=xml(await zText(files,path)),rowsEl=sheet.getElementsByTagName('row'),out=[],maxc=0;
+  for(i=0;i<rowsEl.length;i++){
+    var cs=rowsEl[i].getElementsByTagName('c'),cells=[],rn=parseInt(rowsEl[i].getAttribute('r'),10);
+    for(j=0;j<cs.length;j++){
+      var c=cs[j],ref=c.getAttribute('r'),ci=ref?colIdx(ref):cells.length,ty=c.getAttribute('t'),v=c.getElementsByTagName('v')[0],val='';
+      if(ty==='s')val=v?(sst[parseInt(v.textContent,10)]||''):'';
+      else if(ty==='inlineStr')val=Array.prototype.map.call(c.getElementsByTagName('t'),function(x){return x.textContent}).join('');
+      else if(ty==='b')val=v&&v.textContent==='1'?'TRUE':'FALSE';
+      else if(ty==='e')val='';
+      else val=v?v.textContent:'';
+      cells[ci]=String(val).replace(/[\t\r\n]+/g,' ');if(ci+1>maxc)maxc=ci+1}
+    var ri=(rn||out.length+1)-1;while(out.length<ri)out.push([]);out[ri]=cells}
+  var lines=out.map(function(r){var a=[];for(var k=0;k<maxc;k++)a.push(r[k]===undefined?'':r[k]);return a.join('\t')});
+  while(lines.length&&!lines[lines.length-1].replace(/\t/g,'').trim())lines.pop();
+  return {tsv:lines.join('\n'),sheet:sh.getAttribute('name')||''}}
 function readFile(f){
   var t=T();if(!f)return;
-  if(/\.(xlsx|xlsm|xls|ods|numbers)$/i.test(f.name)){$('toastA').textContent=t.fileXls;return}
+  if(/\.(xlsx|xlsm)$/i.test(f.name)){
+    if(f.size>20*1024*1024||typeof DecompressionStream==='undefined'){$('toastA').textContent=t.fileBad;return}
+    f.arrayBuffer().then(readXlsx).then(function(x){
+      if(!x.tsv.trim()){$('toastA').textContent=t.fileBad;return}
+      $('paste').value=x.tsv;$('bCheck').click();$('toastA').textContent=t.xlsRead(f.name,x.sheet)+' '+$('toastA').textContent
+    }).catch(function(){$('toastA').textContent=t.fileBad});return}
+  if(/\.(xls|ods|numbers)$/i.test(f.name)){$('toastA').textContent=t.fileXls;return}
   if(f.size>5*1024*1024){$('toastA').textContent=t.fileBad;return}
   var r=new FileReader();
   r.onerror=function(){$('toastA').textContent=t.fileBad};
