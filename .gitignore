@@ -7,3 +7,5 @@ private/
 node_modules/
 !tests/paxml.xsd
 tests/out/
+*.xlsx
+*.xls
