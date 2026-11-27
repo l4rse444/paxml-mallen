@@ -163,6 +163,7 @@ footer{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
       <span class="muted" style="font-size:12px" id="shown"></span>
     </div>
     <p class="muted" style="font-size:12px" id="legend"></p>
+    <div class="row"><button type="button" class="btn" id="bList"></button></div>
     <div class="tablebox"><table id="tbl"></table></div>
   </section>
 
@@ -196,6 +197,7 @@ var S={
   hA:'Lägg in personallistan',noteTest:'Testversion. Använd bara påhittad data här. Filen är inte testad mot Fortnox ännu.',
   lblPaste:'Eller klistra in tabellen (Ctrl+V från Excel, med rubrikraden)',
   check:'Kontrollera listan',sample:'Prova med exempeldata (14 påhittade anställda)',tmpl:'Spara tom mall (.csv)',clear:'Rensa',
+  listBtn:'Ladda ner listan med dina rättelser (.csv)',listSaved:'Listan sparades i din hämtningsmapp. Den kan släppas in här igen.',listCols:['Status','Med i filen'],listOk:'OK',listYes:'Ja',listNo:'Nej',
   report:'Ladda ner felrapport (.csv)',repCols:['Typ','Rad','Anst.nr','Namn','Fält','Problem','Värde i listan','Status'],repAck:'Bekräftad',repOpen:'Öppen',repSaved:'Felrapporten sparades i din hämtningsmapp.',
   chooseFile:'Släpp en fil här eller klicka för att välja',dropHint:'Excel (.xlsx), CSV eller TSV',dropHere:'Släpp filen här',fileRead:function(n){return 'Läste in '+n+'.'},fileBad:'Filen kunde inte läsas. Använd en Excel- (.xlsx), CSV-, TSV- eller textfil.',fileXls:'Det här filformatet kan inte läsas. Spara om filen som .xlsx eller CSV (i Excel: Arkiv → Spara som) och släpp den här.',xlsRead:function(n,sh){return 'Läste in '+n+' (blad: '+sh+').'},
   hint:'Du kan släppa en Excel- eller CSV-fil i rutan, eller klistra in. Kolumnerna matchas på rubrikerna. Saknas rubrikrad används mallens ordning. Tab, semikolon och komma fungerar som avskiljare.',
@@ -263,6 +265,7 @@ var S={
   hA:'Add the staff list',noteTest:'Test version. Use made-up data only. The file has not been tested against Fortnox yet.',
   lblPaste:'Or paste the table (Ctrl+V from Excel, with the header row)',
   check:'Check the list',sample:'Try example data (14 made-up employees)',tmpl:'Save blank template (.csv)',clear:'Clear',
+  listBtn:'Download the list with your corrections (.csv)',listSaved:'The list was saved in your downloads folder. You can drop it here again.',listCols:['Status','Included in file'],listOk:'OK',listYes:'Yes',listNo:'No',
   report:'Download error report (.csv)',repCols:['Type','Row','Employee no.','Name','Field','Problem','Value in the list','Status'],repAck:'Confirmed',repOpen:'Open',repSaved:'The error report was saved in your downloads folder.',
   chooseFile:'Drop a file here or click to browse',dropHint:'Excel (.xlsx), CSV or TSV',dropHere:'Drop the file here',fileRead:function(n){return 'Read '+n+'.'},fileBad:'The file could not be read. Use an Excel (.xlsx), CSV, TSV or text file.',fileXls:'This file format cannot be read. Save the file again as .xlsx or CSV (in Excel: File → Save as) and drop it here.',xlsRead:function(n,sh){return 'Read '+n+' (sheet: '+sh+').'},
   hint:'You can drop an Excel or CSV file onto the box, or paste. Columns are matched on the headers. Without a header row the template order is used. Tab, semicolon and comma all work as separators.',
@@ -529,7 +532,7 @@ function setStatic(){
   $('pillTest').textContent=t.test;$('pillTarget').textContent=t.target;$('offline').textContent=t.offline;
   $('lsv').setAttribute('aria-pressed',LANG==='sv');$('len').setAttribute('aria-pressed',LANG==='en');
   $('hA').textContent=t.hA;$('noteTest').textContent=t.noteTest;$('lblPaste').textContent=t.lblPaste;
-  $('bCheck').textContent=t.check;$('bReport').textContent=t.report;$('dropTitle').textContent=t.chooseFile;$('dropHint').textContent=t.dropHint;$('bSample').textContent=t.sample;$('bTemplate').textContent=t.tmpl;$('bClear').textContent=t.clear;$('pHint').textContent=t.hint;
+  $('bCheck').textContent=t.check;$('bReport').textContent=t.report;$('bList').textContent=t.listBtn;$('dropTitle').textContent=t.chooseFile;$('dropHint').textContent=t.dropHint;$('bSample').textContent=t.sample;$('bTemplate').textContent=t.tmpl;$('bClear').textContent=t.clear;$('pHint').textContent=t.hint;
   $('hB').textContent=t.hB;$('lblImp').textContent=t.lblImp;$('pImp').textContent=t.pImp;$('impDate').value=impDate;$('lblOnly').textContent=t.onlyP;$('legend').textContent=t.legend;
   $('hC').textContent=t.hC;$('pC').textContent=t.pC;$('bSave').textContent=t.save;$('bCopy').textContent=t.copy;$('sumXml').textContent=t.sumXml;$('pLimits').textContent=t.limits;$('foot').textContent=t.foot}
 function renderSteps(){
@@ -735,6 +738,17 @@ function buildReport(){
       var msg=t.m[x.code]?t.m[x.code](x.p):(t.et[x.code]||t.gt[x.code]||x.code);
       out.push([x.lvl==='e'?t.err:t.warn,res.rowNo,r.raw.anstnr||'',nm,colLabel(x.col),msg,r.raw[x.col]||'',x.lvl==='e'?t.repOpen:(x.acked?t.repAck:t.repOpen)].map(csvCell).join(';'))})});
   return '\uFEFF'+out.join('\r\n')+'\r\n'}
+async function saveCsv(name,data){
+  var dl=await getDl();
+  if(dl){await dl.save({filename:name.replace(/\.csv$/,'.txt'),data:data})}
+  else{var bl=new Blob([data],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000)}}
+function buildList(){
+  var t=T(),hdr=COLS.map(function(c){return c[1][LANG]}).concat(t.listCols),out=[hdr.map(csvCell).join(';')];
+  rows.forEach(function(r,i){var res=results[i],bad=res.iss.some(function(x){return x.lvl==='e'||!x.acked}),
+    st=bad?res.iss.filter(function(x){return x.lvl==='e'||!x.acked}).map(function(x){return (x.lvl==='e'?t.err:t.warn)+': '+colLabel(x.col)}).join(', '):t.listOk;
+    out.push(KEYS.map(function(k){return r.raw[k]}).concat([st,r.inc?t.listYes:t.listNo]).map(csvCell).join(';'))});
+  return '\uFEFF'+out.join('\r\n')+'\r\n'}
+$('bList').onclick=async function(){var t=T();try{await saveCsv('personallista_'+todayStr()+'.csv',buildList());$('toastA').textContent=t.listSaved}catch(e){}};
 $('bReport').onclick=async function(){
   var t=T(),name='felrapport_'+todayStr()+'.csv',data=buildReport(),dl=await getDl();
   try{
