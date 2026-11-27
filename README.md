@@ -4,7 +4,7 @@ Browser-only tool: drop or paste a staff list (Excel .xlsx, CSV/TSV or pasted fr
 Everything runs in the browser. A CSP (meta tag in `index.html`, and `_headers` on Cloudflare/Netlify) blocks all outgoing requests (`connect-src 'none'`).
 
 ## What it checks
-Personnummer (format, date, check digit, duplicates, samordningsnummer), optional date-of-birth column vs personnummer, unusual age at start date, dates (ISO, dd/mm/yyyy, Excel serials), employment type and pay type, tax table/column, bank details, salary sanity, leavers before the import date. Errors block saving; warnings must be acknowledged. Column headers are matched by name (Swedish, English and HiBob export names).
+Personnummer (format, date, check digit, duplicates, samordningsnummer), optional date-of-birth column vs personnummer, unusual age at start date, dates (ISO, dd/mm/yyyy, Excel serials), employment type and pay type, tax table/column, bank details, salary sanity, leavers before the import date. Bank details are checked against the Swedish clearing ranges and check digits (Bankgirot's account-structure manual) and IBAN mod 97. Across rows it flags shared bank accounts or e-mail addresses, the same person twice, pay far from the list's median, start dates far from the import date, fixed term without end date and probation over six months. Step 3 shows a short sanity list. Errors block saving; warnings must be acknowledged. Column headers are matched by name (Swedish, English and HiBob export names).
 
 ## Files
 - `index.html`: the whole tool (one file, no build step).

@@ -110,6 +110,16 @@ td.st .e{color:var(--err);font-weight:600}td.st .w{color:var(--warn);font-weight
 .confirm span{font-weight:400;color:var(--fg)}
 .confirm input{margin-top:3px}
 .locked{opacity:.55}
+/* sanity check list */
+.sanity{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sanity .sh{padding:9px 14px;background:var(--bg);border-bottom:1px solid var(--line);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.sanity .sr{display:flex;gap:10px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--line);font-size:12px}
+.sanity .sr:last-child{border-bottom:0}
+.sanity .mk{flex:none;width:16px;text-align:center;font-weight:600;color:var(--ok)}
+.sanity .sr.flag .mk{color:var(--warn)}
+.sanity .sk{flex:none;width:120px;color:var(--muted)}
+.sanity .sv{flex:1;min-width:0;color:var(--fg)}
+@media (max-width:520px){.sanity .sr{flex-wrap:wrap}.sanity .sk{width:auto}}
 textarea#xmlout{width:100%;height:220px;margin-top:8px;font:11px/1.5 var(--mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
 footer{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
 @media (max-width:640px){.tools{align-items:flex-start}header.top{padding-top:28px}}
@@ -171,6 +181,7 @@ footer{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
     <h2 id="hC"></h2>
     <p class="muted" id="pC"></p>
     <div class="tiles" id="tiles"></div>
+    <div class="sanity" id="sanity"></div>
     <label class="confirm"><input type="checkbox" id="chkConfirm"><span id="lblConfirm"></span></label>
     <div class="row">
       <button type="button" class="btn primary" id="bSave"></button>
@@ -198,6 +209,11 @@ var S={
   lblPaste:'Eller klistra in tabellen (Ctrl+V från Excel, med rubrikraden)',
   check:'Kontrollera listan',sample:'Prova med exempeldata (14 påhittade anställda)',tmpl:'Spara tom mall (.csv)',clear:'Rensa',
   listBtn:'Ladda ner listan med dina rättelser (.csv)',listSaved:'Listan sparades i din hämtningsmapp. Den kan släppas in här igen.',listCols:['Status','Med i filen'],listOk:'OK',listYes:'Ja',listNo:'Nej',
+  snH:'Rimlighetskontroll',snStart:'Startdatum',snPay:'Lön',snBank:'Bankkonton',snShare:'Dubbletter',snTax:'Skattetabell',
+  snStartV:function(a,b){return 'Äldst '+a+' · nyast '+b},snPayM:function(n,lo,md,hi){return 'Månadslön ('+n+'): lägst '+lo+' · mitt '+md+' · högst '+hi},snPayH:function(n,lo,md,hi){return 'Timlön ('+n+'): lägst '+lo+' · mitt '+md+' · högst '+hi},
+  snBankV:function(ok,n,iban,none,other){return ok+' av '+n+' kontrollerade mot bankens kontrollsiffra'+(iban?' · '+iban+' IBAN':'')+(other?' · '+other+' ej kontrollerade':'')+(none?' · '+none+' utan bankuppgifter':'')},
+  snShareNone:'Inga delade bankkonton, e-postadresser eller dubbletter',snShareSome:function(n){return n+(n===1?' möjlig dubblett eller delat konto bekräftades i steg 2':' möjliga dubbletter eller delade konton bekräftades i steg 2')},
+  snTaxNone:'Alla har skattetabell',snTaxSome:function(n,m,k){return 'Saknas för '+n+' av '+m+(k?'. '+k+' av dem har redan börjat: kontrollera att tabell finns i Fortnox före första lönekörningen':'')},
   report:'Ladda ner felrapport (.csv)',repCols:['Typ','Rad','Anst.nr','Namn','Fält','Problem','Värde i listan','Status'],repAck:'Bekräftad',repOpen:'Öppen',repSaved:'Felrapporten sparades i din hämtningsmapp.',
   chooseFile:'Släpp en fil här eller klicka för att välja',dropHint:'Excel (.xlsx), CSV eller TSV',dropHere:'Släpp filen här',fileRead:function(n){return 'Läste in '+n+'.'},fileBad:'Filen kunde inte läsas. Använd en Excel- (.xlsx), CSV-, TSV- eller textfil.',fileXls:'Det här filformatet kan inte läsas. Spara om filen som .xlsx eller CSV (i Excel: Arkiv → Spara som) och släpp den här.',xlsRead:function(n,sh){return 'Läste in '+n+' (blad: '+sh+').'},
   hint:'Du kan släppa en Excel- eller CSV-fil i rutan, eller klistra in. Kolumnerna matchas på rubrikerna. Saknas rubrikrad används mallens ordning. Tab, semikolon och komma fungerar som avskiljare.',
@@ -225,8 +241,8 @@ var S={
   choose:'Välj…',nrows:function(n){return n+(n===1?' rad':' rader')},showRows:function(n){return 'Visa vilka '+n+(n===1?' rad':' rader')},
   ackAll:function(n){return n===1?'Jag har kontrollerat':'Jag har kontrollerat alla '+n},keepAll:function(n){return 'Ta med '+(n===1?'personen':'alla '+n)+' (slutlön)'},exclAll:function(n){return 'Utelämna '+(n===1?'personen':'alla '+n)},exclRow:'Utelämna',
   unkTitle:'Okända anställningsformer',unkHelp:'Välj vad varje värde ska bli i Fortnox. Valet gäller alla rader med samma värde.',
-  gt:{age_odd:'Ovanlig ålder vid anställningsstart',dob_samo:'Födelsedatum skiljer sig från samordningsnumret',grad_tim:'Timanställda med sysselsättningsgrad',prov:'Provanställning utan slutdatum',lon_sane:'Ovanliga löner',epost:'E-postadresser som ser fel ut',pair:'Skattetabell utan skattekolumn',no_tax:'Skattetabell saknas',slut_past:'Slutdatum har redan passerat',bank_clr:'Clearingnummer saknas',bank_acc:'Kontonummer saknas',bank_none:'Bankuppgifter saknas',bank_fmt:'Kontonummer ser ovanligt ut',clr_fmt:'Clearingnummer ser ovanligt ut',pay_conf:'Anställningsform och lönform säger emot varandra'},
-  gh:{age_odd:'Kontrollera personnumret och startdatumet.',dob_samo:'Samordningsnummer bygger ibland på ett ungefärligt födelsedatum. Kontrollera mot ID-handling.',grad_tim:'Graden skrivs inte till filen, eftersom timlön inte har någon grad. Inget behöver rättas om det stämmer.',prov:'Kontrollera att provanställningen inte ska avslutas.',lon_sane:'Kontrollera beloppet och att lönformen (månad eller timme) stämmer.',epost:'Rätta adressen eller lämna fältet tomt.',pair:'Lägg in skattekolumn, annars sätter Fortnox den själv.',no_tax:'Hämtas ofta inte från personalsystemet. Lägg in tabell och kolumn i filen eller i Fortnox efter importen.',slut_past:'Ta med personen om slutlön eller slutavräkning ska köras. Annars utelämna.',bank_clr:'Utan clearingnummer går inte kontot att använda för utbetalning.',bank_acc:'Clearingnummer finns men inget kontonummer.',bank_none:'Utbetalning går inte att göra utan bankuppgifter. Lägg in dem i Fortnox.',bank_fmt:'Kontonummer har normalt 5–12 siffror.',clr_fmt:'Clearingnummer har 4 eller 5 siffror.',pay_conf:'Lönformen i listan används för filen. Kontrollera att den stämmer.'},
+  gt:{bank_chk:'Kontonummer med fel kontrollsiffra',bank_len:'Kontonummer med fel antal siffror',clr_unk:'Okänt clearingnummer',clr_five:'Swedbank-clearing utan femte siffran',bank_dup:'Samma bankkonto på flera personer',mail_dup:'Samma e-postadress på flera personer',person_dup:'Samma person flera gånger',lon_batch:'Lön som avviker från resten av listan',start_old:'Startdatum långt före importdatum',start_far:'Startdatum långt efter importdatum',visstid_noend:'Visstidsanställning utan slutdatum',prov_long:'Provanställning över sex månader',pnr_fake:'Personnummer som ser påhittade ut',age_odd:'Ovanlig ålder vid anställningsstart',dob_samo:'Födelsedatum skiljer sig från samordningsnumret',grad_tim:'Timanställda med sysselsättningsgrad',prov:'Provanställning utan slutdatum',lon_sane:'Ovanliga löner',epost:'E-postadresser som ser fel ut',pair:'Skattetabell utan skattekolumn',no_tax:'Skattetabell saknas',slut_past:'Slutdatum har redan passerat',bank_clr:'Clearingnummer saknas',bank_acc:'Kontonummer saknas',bank_none:'Bankuppgifter saknas',bank_fmt:'Kontonummer ser ovanligt ut',clr_fmt:'Clearingnummer ser ovanligt ut',pay_conf:'Anställningsform och lönform säger emot varandra'},
+  gh:{bank_chk:'Jämför med bankens uppgifter. Ett fel kontonummer ger en returnerad utbetalning.',bank_len:'Kontrollera antal siffror mot bankens uppgifter.',clr_unk:'Kontrollera clearingnumret. Utländska konton anges som IBAN.',clr_five:'Swedbanks 8xxx-konton har fem siffror i clearingnumret. Den femte siffran saknas.',bank_dup:'Samma konto på två anställda är ett vanligt tecken på dubblett eller fel. Kontrollera vem kontot tillhör.',mail_dup:'Två personer med samma adress kan vara en dubblett eller ett kopieringsfel.',person_dup:'Samma namn och födelsedatum men olika personnummer. Kontrollera att det inte är samma person.',lon_batch:'Kontrollera beloppet och att lönformen (månad eller timme) stämmer.',start_old:'Går lönen för tiden före importen att betala retroaktivt? Kontrollera startdatumet.',start_far:'Kontrollera att året i startdatumet stämmer.',visstid_noend:'En visstidsanställning har normalt ett slutdatum.',prov_long:'Provanställning får enligt lagen vara högst sex månader, så vitt jag vet. Kontrollera datumen.',pnr_fake:'Siffror som 0000, 1234 eller upprepade siffror är ofta platshållare. Kontrollera mot ID-handling.',age_odd:'Kontrollera personnumret och startdatumet.',dob_samo:'Samordningsnummer bygger ibland på ett ungefärligt födelsedatum. Kontrollera mot ID-handling.',grad_tim:'Graden skrivs inte till filen, eftersom timlön inte har någon grad. Inget behöver rättas om det stämmer.',prov:'Kontrollera att provanställningen inte ska avslutas.',lon_sane:'Kontrollera beloppet och att lönformen (månad eller timme) stämmer.',epost:'Rätta adressen eller lämna fältet tomt.',pair:'Lägg in skattekolumn, annars sätter Fortnox den själv.',no_tax:'Hämtas ofta inte från personalsystemet. Lägg in tabell och kolumn i filen eller i Fortnox efter importen.',slut_past:'Ta med personen om slutlön eller slutavräkning ska köras. Annars utelämna.',bank_clr:'Utan clearingnummer går inte kontot att använda för utbetalning.',bank_acc:'Clearingnummer finns men inget kontonummer.',bank_none:'Utbetalning går inte att göra utan bankuppgifter. Lägg in dem i Fortnox.',bank_fmt:'Kontonummer har normalt 5–12 siffror.',clr_fmt:'Clearingnummer har 4 eller 5 siffror.',pay_conf:'Lönformen i listan används för filen. Kontrollera att den stämmer.'},
 
   m:{
    need:function(p){return p.c+' saknas.'},
@@ -242,6 +258,19 @@ var S={
    pnr_chk:function(p){return 'Kontrollsiffran stämmer inte för '+p.v+'. Kontrollera mot ID-handling. Vanlig orsak: två siffror har bytt plats.'},
    pnr_date:function(p){return 'Födelsedatumet i personnumret är ogiltigt: '+p.v+'.'},
    pnr_dup:function(p){return 'Personnumret finns även på rad '+p.r+'.'},
+   bank_chk:function(p){return p.b+': kontonumret '+p.v+' har fel kontrollsiffra. Troligen ett skrivfel.'},
+   bank_len:function(p){return 'Kontonumret '+p.v+' har fel antal siffror för '+p.b+'.'},
+   clr_unk:function(p){return 'Clearingnumret '+p.v+' finns inte i de svenska bankernas register.'},
+   clr_five:function(p){return 'Swedbank 8xxx har femsiffrigt clearingnummer. Du angav '+p.v+'.'},
+   bank_dup:function(p){return 'Samma bankkonto finns även på rad '+p.v+'.'},
+   mail_dup:function(p){return 'Samma e-postadress finns även på rad '+p.v+'.'},
+   person_dup:function(p){return 'Samma namn och födelsedatum finns även på rad '+p.v+', med ett annat personnummer.'},
+   lon_batch:function(p){return 'Lönen '+p.v+' avviker kraftigt från listans mittvärde ('+p.m+').'},
+   start_old:function(p){return 'Startdatum '+p.v+' ligger '+p.d+' dagar före importdatum.'},
+   start_far:function(p){return 'Startdatum '+p.v+' ligger '+p.d+' dagar efter importdatum.'},
+   visstid_noend:function(){return 'Visstid utan slutdatum.'},
+   prov_long:function(p){return 'Provanställningen är '+p.d+' dagar lång.'},
+   pnr_fake:function(p){return 'Personnumret '+p.v+' ser ut som ett påhittat nummer.'},
    dob_bad:function(p){return 'Födelsedatum är inte ett datum: '+p.v+'. Skriv ÅÅÅÅ-MM-DD.'},
    dob_mis:function(p){return 'Födelsedatum '+p.v+' passar inte personnumret ('+p.p+'). Kontrollera att rätt person och rätt nummer är ihop.'},
    dob_samo:function(p){return 'Födelsedatum '+p.v+' skiljer sig från samordningsnumret ('+p.p+').'},
@@ -266,6 +295,11 @@ var S={
   lblPaste:'Or paste the table (Ctrl+V from Excel, with the header row)',
   check:'Check the list',sample:'Try example data (14 made-up employees)',tmpl:'Save blank template (.csv)',clear:'Clear',
   listBtn:'Download the list with your corrections (.csv)',listSaved:'The list was saved in your downloads folder. You can drop it here again.',listCols:['Status','Included in file'],listOk:'OK',listYes:'Yes',listNo:'No',
+  snH:'Sanity check',snStart:'Start dates',snPay:'Pay',snBank:'Bank accounts',snShare:'Duplicates',snTax:'Tax table',
+  snStartV:function(a,b){return 'Earliest '+a+' · latest '+b},snPayM:function(n,lo,md,hi){return 'Monthly pay ('+n+'): lowest '+lo+' · middle '+md+' · highest '+hi},snPayH:function(n,lo,md,hi){return 'Hourly pay ('+n+'): lowest '+lo+' · middle '+md+' · highest '+hi},
+  snBankV:function(ok,n,iban,none,other){return ok+' of '+n+' checked against the bank check digit'+(iban?' · '+iban+' IBAN':'')+(other?' · '+other+' not checked':'')+(none?' · '+none+' without bank details':'')},
+  snShareNone:'No shared bank accounts, e-mail addresses or duplicates',snShareSome:function(n){return n+(n===1?' possible duplicate or shared account was confirmed in step 2':' possible duplicates or shared accounts were confirmed in step 2')},
+  snTaxNone:'Everyone has a tax table',snTaxSome:function(n,m,k){return 'Missing for '+n+' of '+m+(k?'. '+k+' of them have already started: check that a table exists in Fortnox before the first payroll run':'')},
   report:'Download error report (.csv)',repCols:['Type','Row','Employee no.','Name','Field','Problem','Value in the list','Status'],repAck:'Confirmed',repOpen:'Open',repSaved:'The error report was saved in your downloads folder.',
   chooseFile:'Drop a file here or click to browse',dropHint:'Excel (.xlsx), CSV or TSV',dropHere:'Drop the file here',fileRead:function(n){return 'Read '+n+'.'},fileBad:'The file could not be read. Use an Excel (.xlsx), CSV, TSV or text file.',fileXls:'This file format cannot be read. Save the file again as .xlsx or CSV (in Excel: File → Save as) and drop it here.',xlsRead:function(n,sh){return 'Read '+n+' (sheet: '+sh+').'},
   hint:'You can drop an Excel or CSV file onto the box, or paste. Columns are matched on the headers. Without a header row the template order is used. Tab, semicolon and comma all work as separators.',
@@ -292,8 +326,8 @@ var S={
   choose:'Choose…',nrows:function(n){return n+(n===1?' row':' rows')},showRows:function(n){return 'Show the '+n+(n===1?' row':' rows')},
   ackAll:function(n){return n===1?'I have checked this':'I have checked all '+n},keepAll:function(n){return 'Include '+(n===1?'the person':'all '+n)+' (final pay)'},exclAll:function(n){return 'Leave out '+(n===1?'the person':'all '+n)},exclRow:'Leave out',
   unkTitle:'Unknown employment types',unkHelp:'Choose what each value becomes in Fortnox. The choice applies to every row with the same value.',
-  gt:{age_odd:'Unusual age at start date',dob_samo:'Date of birth differs from the coordination number',grad_tim:'Hourly employees with an employment rate',prov:'Probation without an end date',lon_sane:'Unusual salaries',epost:'E-mail addresses that look wrong',pair:'Tax table without tax column',no_tax:'Tax table missing',slut_past:'End date has already passed',bank_clr:'Clearing number missing',bank_acc:'Account number missing',bank_none:'Bank details missing',bank_fmt:'Account number looks unusual',clr_fmt:'Clearing number looks unusual',pay_conf:'Employment type and pay type disagree'},
-  gh:{age_odd:'Check the ID number and the start date.',dob_samo:'Coordination numbers are sometimes based on an approximate birth date. Compare with an ID document.',grad_tim:'The rate is not written to the file, since hourly pay has no rate. Nothing to fix if this is expected.',prov:'Check that the probation should not end.',lon_sane:'Check the amount and that the pay type (monthly or hourly) is right.',epost:'Correct the address or leave the field empty.',pair:'Add the tax column, otherwise Fortnox sets it.',no_tax:'Often not available in the HR system. Add table and column in the file or in Fortnox after the import.',slut_past:'Include the person if final pay or settlement is still to be run. Otherwise leave out.',bank_clr:'Without a clearing number the account cannot be used for payment.',bank_acc:'A clearing number exists but no account number.',bank_none:'Payment is not possible without bank details. Add them in Fortnox.',bank_fmt:'Account numbers normally have 5–12 digits.',clr_fmt:'Clearing numbers have 4 or 5 digits.',pay_conf:'The pay type in the list is used for the file. Check that it is right.'},
+  gt:{bank_chk:'Account number with wrong check digit',bank_len:'Account number with wrong number of digits',clr_unk:'Unknown clearing number',clr_five:'Swedbank clearing without the fifth digit',bank_dup:'Same bank account on several people',mail_dup:'Same e-mail address on several people',person_dup:'Same person more than once',lon_batch:'Pay that differs from the rest of the list',start_old:'Start date long before the import date',start_far:'Start date long after the import date',visstid_noend:'Fixed-term employment without an end date',prov_long:'Probation over six months',pnr_fake:'ID numbers that look made up',age_odd:'Unusual age at start date',dob_samo:'Date of birth differs from the coordination number',grad_tim:'Hourly employees with an employment rate',prov:'Probation without an end date',lon_sane:'Unusual salaries',epost:'E-mail addresses that look wrong',pair:'Tax table without tax column',no_tax:'Tax table missing',slut_past:'End date has already passed',bank_clr:'Clearing number missing',bank_acc:'Account number missing',bank_none:'Bank details missing',bank_fmt:'Account number looks unusual',clr_fmt:'Clearing number looks unusual',pay_conf:'Employment type and pay type disagree'},
+  gh:{bank_chk:'Compare with the bank details. A wrong account number means a returned payment.',bank_len:'Check the number of digits against the bank details.',clr_unk:'Check the clearing number. Foreign accounts are given as IBAN.',clr_five:'Swedbank 8xxx accounts have five digits in the clearing number. The fifth digit is missing.',bank_dup:'The same account on two employees often means a duplicate or a mistake. Check who owns the account.',mail_dup:'Two people with the same address can be a duplicate or a copy error.',person_dup:'Same name and birth date but different ID numbers. Check that it is not the same person.',lon_batch:'Check the amount and that the pay type (month or hour) is right.',start_old:'Can pay for the time before the import be paid retroactively? Check the start date.',start_far:'Check that the year in the start date is right.',visstid_noend:'A fixed-term employment normally has an end date.',prov_long:'Probation may be at most six months under Swedish law, as far as I know. Check the dates.',pnr_fake:'Digits like 0000, 1234 or repeated digits are often placeholders. Compare with an ID document.',age_odd:'Check the ID number and the start date.',dob_samo:'Coordination numbers are sometimes based on an approximate birth date. Compare with an ID document.',grad_tim:'The rate is not written to the file, since hourly pay has no rate. Nothing to fix if this is expected.',prov:'Check that the probation should not end.',lon_sane:'Check the amount and that the pay type (monthly or hourly) is right.',epost:'Correct the address or leave the field empty.',pair:'Add the tax column, otherwise Fortnox sets it.',no_tax:'Often not available in the HR system. Add table and column in the file or in Fortnox after the import.',slut_past:'Include the person if final pay or settlement is still to be run. Otherwise leave out.',bank_clr:'Without a clearing number the account cannot be used for payment.',bank_acc:'A clearing number exists but no account number.',bank_none:'Payment is not possible without bank details. Add them in Fortnox.',bank_fmt:'Account numbers normally have 5–12 digits.',clr_fmt:'Clearing numbers have 4 or 5 digits.',pay_conf:'The pay type in the list is used for the file. Check that it is right.'},
 
   m:{
    need:function(p){return p.c+' is missing.'},
@@ -309,6 +343,19 @@ var S={
    pnr_chk:function(p){return 'The check digit is wrong for '+p.v+'. Compare with an ID document. Common cause: two digits swapped.'},
    pnr_date:function(p){return 'The birth date in the ID number is invalid: '+p.v+'.'},
    pnr_dup:function(p){return 'The same ID number is also on row '+p.r+'.'},
+   bank_chk:function(p){return p.b+': the account number '+p.v+' has a wrong check digit. Probably a typo.'},
+   bank_len:function(p){return 'The account number '+p.v+' has the wrong number of digits for '+p.b+'.'},
+   clr_unk:function(p){return 'The clearing number '+p.v+' is not in the Swedish bank register.'},
+   clr_five:function(p){return 'Swedbank 8xxx has a five-digit clearing number. You entered '+p.v+'.'},
+   bank_dup:function(p){return 'The same bank account is also on row '+p.v+'.'},
+   mail_dup:function(p){return 'The same e-mail address is also on row '+p.v+'.'},
+   person_dup:function(p){return 'The same name and birth date are also on row '+p.v+', with a different ID number.'},
+   lon_batch:function(p){return 'The pay '+p.v+' is far from the middle value of the list ('+p.m+').'},
+   start_old:function(p){return 'Start date '+p.v+' is '+p.d+' days before the import date.'},
+   start_far:function(p){return 'Start date '+p.v+' is '+p.d+' days after the import date.'},
+   visstid_noend:function(){return 'Fixed term without an end date.'},
+   prov_long:function(p){return 'The probation is '+p.d+' days long.'},
+   pnr_fake:function(p){return 'The ID number '+p.v+' looks made up.'},
    dob_bad:function(p){return 'Date of birth is not a date: '+p.v+'. Write YYYY-MM-DD.'},
    dob_mis:function(p){return 'Date of birth '+p.v+' does not fit the ID number ('+p.p+'). Check that the right person and number belong together.'},
    dob_samo:function(p){return 'Date of birth '+p.v+' differs from the coordination number ('+p.p+').'},
@@ -408,9 +455,64 @@ var anstMap={},impDate=todayStr();
 function nowYear(){return new Date().getFullYear()}
 
 /* ---------- validation ---------- */
+/* ---------- bank checks (Swedish clearing ranges and check digits, per Bankgirot's account-structure manual) ---------- */
+/* [from,to,bank,type,comment]. Type 1: 7-digit account, modulus 11 with clearing. Type 2: clearing not in account; comment 2 = mod 11 over 9 digits, others = mod 10 over 10 digits. */
+var BANKS=[[3300,3300,'Nordea (personkonto)',2,1],[3782,3782,'Nordea (personkonto)',2,1],
+ [1100,1199,'Nordea',1,1],[1200,1399,'Danske Bank',1,1],[1400,2099,'Nordea',1,1],[2300,2399,'Ålandsbanken',1,2],[2400,2499,'Danske Bank',1,1],
+ [3000,3399,'Nordea',1,1],[3400,3409,'Länsförsäkringar Bank',1,1],[3410,3999,'Nordea',1,1],[4000,4999,'Nordea',1,2],[5000,5999,'SEB',1,1],
+ [6000,6999,'Handelsbanken',2,2],[7000,7999,'Swedbank',1,1],[8000,8999,'Swedbank',2,3],
+ [9020,9029,'Länsförsäkringar Bank',1,2],[9040,9049,'Citibank',1,2],[9060,9069,'Länsförsäkringar Bank',1,1],[9070,9079,'Multitude Bank',1,1],
+ [9100,9109,'Nordnet',1,2],[9120,9124,'SEB',1,1],[9130,9149,'SEB',1,1],[9150,9169,'Skandiabanken',1,2],[9170,9179,'IKANO Bank',1,1],
+ [9180,9189,'Danske Bank',2,1],[9190,9199,'DNB',1,2],[9230,9239,'Marginalen Bank',1,1],[9250,9259,'SBAB',1,1],[9260,9269,'DNB',1,2],
+ [9270,9279,'ICA Banken',1,1],[9280,9289,'Resurs Bank',1,1],[9300,9349,'Swedbank',2,1],[9390,9399,'Landshypotek',1,2],
+ [9460,9469,'Santander Consumer Bank',1,1],[9470,9479,'BNP Paribas',1,2],[9500,9549,'Nordea (Plusgirot)',2,3],[9550,9569,'Avanza',1,2],
+ [9570,9579,'Sparbanken Syd',2,1],[9580,9589,'Aion Bank',1,1],[9590,9599,'Erik Penser',1,2],[9630,9639,'Lån & Spar Bank',1,1],
+ [9640,9649,'NOBA',1,2],[9660,9669,'Svea Bank',1,2],[9670,9679,'JAK Medlemsbank',1,2],[9680,9689,'BlueStep Finans',1,1],
+ [9700,9709,'Ekobanken',1,2],[9710,9719,'Lunar',1,2],[9750,9759,'Northmill',1,2],[9780,9789,'Klarna',1,2],
+ [9880,9889,'Riksgälden',1,2],[9890,9899,'Riksgälden',2,1],[9960,9969,'Nordea (Plusgirot)',2,3]];
+function mod10ok(d){var sum=0;for(var i=0;i<d.length;i++){var dig=+d[d.length-1-i],v=dig*(i%2===0?1:2);if(v>9)v-=9;sum+=v}return sum%10===0}
+function mod11ok(d){var sum=0;for(var i=0;i<d.length;i++)sum+=(+d[d.length-1-i])*((i%10)+1);return sum%11===0}
+function bankFor(clr4){var n=+clr4;for(var i=0;i<BANKS.length;i++)if(n>=BANKS[i][0]&&n<=BANKS[i][1])return BANKS[i];return null}
+/* returns {bank:name|'' , code:'' | 'clr_unk' | 'clr_five' | 'bank_len' | 'bank_chk', ok:true when verified} */
+function bankCheck(cd,ac){
+  var e=bankFor(cd.slice(0,4));if(!e)return {bank:'',code:'clr_unk',ok:false};
+  var r={bank:e[2],code:'',ok:false};
+  if(e[0]>=8000&&e[1]<=8999&&cd.length!==5){r.code='clr_five';return r}
+  var good;
+  if(e[3]===1){if(ac.length!==7){r.code='bank_len';return r}
+    good=mod11ok((e[4]===1?cd.slice(1,4):cd.slice(0,4))+ac)}
+  else if(e[4]===2){if(ac.length>9){r.code='bank_len';return r}good=mod11ok(('000000000'+ac).slice(-9))}
+  else{if(ac.length>10){r.code='bank_len';return r}good=mod10ok(('0000000000'+ac).slice(-10))}
+  if(!good){r.code='bank_chk';return r}
+  r.ok=true;return r}
+function ibanOk(ib){
+  if(ib.slice(0,2)==='SE'&&ib.length!==24)return false;
+  var t=ib.slice(4)+ib.slice(0,4),n='';
+  for(var i=0;i<t.length;i++){var c=t.charCodeAt(i);n+=(c>=65&&c<=90)?String(c-55):t[i]}
+  var rem=0;for(i=0;i<n.length;i++)rem=(rem*10+(+n[i]))%97;return rem===1}
+function dayDiff(a,b){var x=a.split('-'),y=b.split('-');return Math.round((Date.UTC(+x[0],x[1]-1,+x[2])-Date.UTC(+y[0],y[1]-1,+y[2]))/86400000)}
+function median(a){a=a.slice().sort(function(p,q){return p-q});var m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2}
+function fakePnr(d){var last4=d.slice(8),ser=d.slice(8,11);return /^(\d)\1{3}$/.test(last4)||last4==='1234'||ser==='000'}
+/* checks that compare rows with each other (shared accounts, duplicates, salary outliers, date logic) */
+function crossChecks(out){
+  function push(i,col,code,p){var r=rows[i],id=r.id+':'+code;out[i].iss.push({lvl:'w',col:col,code:code,p:p||{},id:id,acked:!!acks[id]})}
+  function group(keyFn,colName,code){var g={};rows.forEach(function(r,i){if(!r.inc)return;var k=keyFn(out[i].v);if(!k)return;(g[k]=g[k]||[]).push(i)});
+    Object.keys(g).forEach(function(k){var L=g[k];if(L.length<2)return;L.forEach(function(i){var o=L.filter(function(j){return j!==i}).map(function(j){return out[j].rowNo});push(i,colName,code,{v:o.join(', ')})})})}
+  group(function(v){if(v.bankiban)return v.bankiban;if(!v.bankkonto||!v.clearing)return '';return v.clearing.slice(0,v.clearing.length===5?5:4)+':'+v.bankkonto},'bankkonto','bank_dup');
+  group(function(v){return (v.epost||'').toLowerCase()},'epost','mail_dup');
+  group(function(v){return v.personnr&&v._by&&v.fornamn?(v.fornamn+' '+v.efternamn).toLowerCase()+'|'+v._by:''},'personnr','person_dup');
+  /* a person with the same name and birth date but another personnummer is a duplicate; same personnummer is already an error */
+  [['m',false],['h',true]].forEach(function(spec){var idx=[],vals=[];rows.forEach(function(r,i){if(!r.inc)return;var v=out[i].v;if(!(v.lon>0)||!!v.hourly!==spec[1])return;idx.push(i);vals.push(v.lon)});
+    if(vals.length<5)return;var md=median(vals);
+    idx.forEach(function(i){var v=out[i].v;if(out[i].iss.some(function(x){return x.code==='lon_sane'}))return;
+      if(v.lon>md*2.5||v.lon<md*0.4)push(i,'lon','lon_batch',{v:num(v.lon),m:num(md)})})});
+  rows.forEach(function(r,i){if(!r.inc)return;var v=out[i].v;
+    if(v.anstdatum){var d=dayDiff(v.anstdatum,impDate);if(d<-60)push(i,'anstdatum','start_old',{v:v.anstdatum,d:-d});else if(d>120)push(i,'anstdatum','start_far',{v:v.anstdatum,d:d})}
+    if(v.anstform==='Visstid'&&!v.slutdatum&&String(r.raw.slutdatum).trim()==='')push(i,'slutdatum','visstid_noend');
+    if(v.anstform==='Provanställning'&&v.slutdatum&&v.anstdatum){var L=dayDiff(v.slutdatum,v.anstdatum);if(L>183)push(i,'slutdatum','prov_long',{d:L})}})}
 function validateAll(){
   var seenA={},seenP={};
-  return rows.map(function(r,i){
+  var out=rows.map(function(r,i){
     var raw=r.raw,iss=[],v={},norm={},rowNo=i+2;
     function add(l,col,code,p){iss.push({lvl:l,col:col,code:code,p:p||{}})}
     function need(k,val){if(String(val).trim()===''){add('e',k,'need',{c:colLabel(k)});return true}return false}
@@ -426,7 +528,7 @@ function validateAll(){
       else{var by=+d.slice(0,4),bm=+d.slice(4,6),bd=+d.slice(6,8);if(bd>60)bd-=60;
         if(!validYMD(by,bm,bd))add('e','personnr','pnr_date',{v:ps});
         else if(!luhn(d.slice(2)))add('e','personnr','pnr_chk',{v:ps});
-        else{v.personnr=d;v._by=by+'-'+pad(bm)+'-'+pad(bd);v._samo=(+d.slice(6,8))>60;if(d!==ps)norm.personnr='→ '+d;
+        else{v.personnr=d;if(fakePnr(d))add('w','personnr','pnr_fake',{v:ps});v._by=by+'-'+pad(bm)+'-'+pad(bd);v._samo=(+d.slice(6,8))>60;if(d!==ps)norm.personnr='→ '+d;
           if(r.inc){if(seenP[d]!==undefined)add('e','personnr','pnr_dup',{r:seenP[d]});else seenP[d]=rowNo}}}}
     v.fornamn=raw.fornamn.trim();need('fornamn',raw.fornamn);
     v.efternamn=raw.efternamn.trim();need('efternamn',raw.efternamn);
@@ -472,16 +574,28 @@ function validateAll(){
     if(tb==='')add('w','skattetabell','no_tax');
     // bank
     function blank(z){z=z.trim();return(/^[^A-Za-z0-9]*$/.test(z)||/^n\/?a\b/i.test(z))?'':z}
-    var bk=blank(raw.bankkonto).replace(/\s+/g,' '),cl=blank(raw.clearing);
-    if(bk){if(/^[A-Za-z]{2}\d{2}/.test(bk)){var ib=bk.replace(/\s/g,'').toUpperCase();if(/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/.test(ib)){v.bankiban=ib;if(ib!==raw.bankkonto.trim())norm.bankkonto='→ '+ib}else add('e','bankkonto','iban',{v:bk})}
-      else{var ac=bk.replace(/[\s.\-]/g,'');if(/^\d+$/.test(ac)){v.bankkonto=ac;if(ac!==raw.bankkonto.trim())norm.bankkonto='→ '+ac;if(ac.length<5||ac.length>12)add('w','bankkonto','bank_fmt',{v:bk})}else{v.bankkonto=bk;add('w','bankkonto','bank_fmt',{v:bk})}}}
+    var bankLen=false,bk=blank(raw.bankkonto).replace(/\s+/g,' '),cl=blank(raw.clearing);
+    if(bk){if(/^[A-Za-z]{2}\d{2}/.test(bk)){var ib=bk.replace(/\s/g,'').toUpperCase();if(/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/.test(ib)&&ibanOk(ib)){v.bankiban=ib;if(ib!==raw.bankkonto.trim())norm.bankkonto='→ '+ib}else add('e','bankkonto','iban',{v:bk})}
+      else{var ac=bk.replace(/[\s.\-]/g,'');if(/^\d+$/.test(ac)){v.bankkonto=ac;if(ac!==raw.bankkonto.trim())norm.bankkonto='→ '+ac;bankLen=ac.length<5||ac.length>12}else{v.bankkonto=bk;add('w','bankkonto','bank_fmt',{v:bk})}}}
     if(cl&&!v.bankiban){var cd=cl.replace(/[\s\-]/g,'');if(/^\d{4,5}$/.test(cd)){v.clearing=cd;if(cd!==cl)norm.clearing='→ '+cd}else add('w','clearing','clr_fmt',{v:cl})}
+    if(!v.bankiban&&v.clearing&&v.bankkonto&&/^\d+$/.test(v.bankkonto)){var e0=bankFor(v.clearing.slice(0,4));
+      if(e0){if((e0[0]===3300||e0[0]===3782)&&v.bankkonto.length===12&&/^(19|20)/.test(v.bankkonto)){v.bankkonto=v.bankkonto.slice(2);norm.bankkonto='→ '+v.bankkonto}
+        else if(e0[3]===1&&v.bankkonto.length===11&&v.bankkonto.indexOf(v.clearing.slice(0,4))===0){v.bankkonto=v.bankkonto.slice(4);norm.bankkonto='→ '+v.bankkonto}}
+      var bc=bankCheck(v.clearing,v.bankkonto);
+      if(bc.bank){norm.clearing='→ '+v.clearing+' · '+bc.bank}
+      if(bc.code==='clr_unk')add('w','clearing','clr_unk',{v:v.clearing});
+      else if(bc.code==='clr_five')add('w','clearing','clr_five',{v:v.clearing});
+      else if(bc.code==='bank_len')add('w','bankkonto','bank_len',{v:v.bankkonto,b:bc.bank});
+      else if(bc.code==='bank_chk')add('w','bankkonto','bank_chk',{v:v.bankkonto,b:bc.bank});
+      v.bankOk=bc.ok}
+    else if(bankLen)add('w','bankkonto','bank_fmt',{v:bk});
     if(!v.bankiban){if(v.bankkonto&&!cl)add('w','clearing','bank_clr');else if(!bk&&!cl)add('w','bankkonto','bank_none');else if(!bk&&cl)add('w','bankkonto','bank_acc')}
     v.hourly=hourly;
     // acks
     iss.forEach(function(x){x.id=r.id+':'+x.code;x.acked=x.lvl==='w'&&!!acks[x.id]});
     return {rowNo:rowNo,v:v,norm:norm,iss:iss,hourly:hourly}
-  })}
+  });
+  crossChecks(out);return out}
 
 /* ---------- xml ---------- */
 function x(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
@@ -502,6 +616,7 @@ function buildXml(){
   o.push('  </personal>','</paxml>');return o.join('\n')}
 
 /* ---------- sample ---------- */
+function sebAcct(i){for(var n=100000+i*4817;;n++){for(var c=0;c<10;c++){var a=String(n)+c;if(mod11ok('000'+a))return a}}}
 function sampleRows(){
   function pn(date,serial,wrong,tenDigit){var d9=date.replace(/-/g,'').slice(2)+serial,c=luhnDigit(d9);if(wrong)c=(c+1)%10;
     return tenDigit?date.slice(2,4)+date.slice(5,7)+date.slice(8,10)+'-'+serial+c:date.replace(/-/g,'')+'-'+serial+c}
@@ -523,7 +638,7 @@ function sampleRows(){
   return E.map(function(e,i){var o={};KEYS.forEach(function(k){o[k]=''});
     o.anstnr=e[0];o.fornamn=e[1];o.efternamn=e[2];o.personnr=pn(e[3],e[4],e[5],e[6]);o.anstform=e[7];o.anstdatum=e[8];o.slutdatum=e[9];o.grad=e[10];o.lon=e[11];o.skattetabell=e[12];o.skattekolumn='1';
     if(i%4!==3)o.epost=e[1].toLowerCase().replace(/[^a-z]/g,function(c){return {'ö':'o','ä':'a','å':'a'}[c]||''})+'.'+e[2].toLowerCase().replace(/[^a-z]/g,function(c){return {'ö':'o','ä':'a','å':'a'}[c]||''})+'@exempel.example';
-    if(i%3!==2){o.clearing='5000';o.bankkonto=String(1100000+i*48217)}
+    if(i%3!==2){o.clearing='5000';o.bankkonto=sebAcct(i)}
     return o})}
 
 /* ---------- rendering ---------- */
@@ -567,7 +682,7 @@ function renderIssues(){
     var li=L.map(function(q){var nm=((q.res.v.fornamn||'')+' '+(q.res.v.efternamn||'')).trim(),det=q.x.p.v!==undefined&&q.x.p.v!==''?' <span class="muted">· '+esc(q.x.p.v)+'</span>':'';
       return '<li><button type="button" class="link" data-goto="c-'+q.r.id+'-'+q.x.col+'">'+esc(t.row+' '+q.res.rowNo+' · '+nm)+'</button>'+det+'</li>'}).join('');
     return '<div class="issue err group"><div class="txt"><span class="tag">'+t.err+'</span><b>'+esc(title)+' · '+esc(t.nrows(n))+'</b><details'+(n<=3?' open':'')+'><summary>'+esc(t.showRows(n))+'</summary><ul class="gl">'+li+'</ul></details></div></div>'});
-  var g=order.map(function(code){var L=groups[code],n=L.length,showV={lon_sane:1,slut_past:1,epost:1,bank_fmt:1,clr_fmt:1};
+  var g=order.map(function(code){var L=groups[code],n=L.length,showV={lon_sane:1,slut_past:1,epost:1,bank_fmt:1,clr_fmt:1,bank_chk:1,bank_len:1,clr_unk:1,clr_five:1,lon_batch:1,start_old:1,start_far:1,pnr_fake:1};
     var li=L.map(function(q){var nm=((q.res.v.fornamn||'')+' '+(q.res.v.efternamn||'')).trim(),det=showV[code]&&q.x.p.v!==undefined?' <span class="muted">· '+esc(q.x.p.v)+'</span>':'';
       return '<li><button type="button" class="link" data-goto="c-'+q.r.id+'-'+q.x.col+'">'+esc(t.row+' '+q.res.rowNo+' · '+nm)+'</button>'+det+(code==='slut_past'?' <button type="button" class="link" data-exc="'+q.r.id+'">'+esc(t.exclRow)+'</button>':'')+'</li>'}).join('');
     var acts='<button type="button" class="btn" data-ackgroup="'+code+'">'+esc(code==='slut_past'?t.keepAll(n):t.ackAll(n))+'</button>'+(code==='slut_past'?'<button type="button" class="btn" data-excgroup="'+code+'">'+esc(t.exclAll(n))+'</button>':'');
@@ -598,6 +713,26 @@ function paintTable(){
     w2.forEach(function(x){st.push('<span class="w">'+t.warn+'</span> '+esc(colLabel(x.col)))});
     $('s-'+r.id).innerHTML=st.length?st.join('<br>'):'<span class="o">'+t.okTxt+'</span>'})}
 function money(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function sanityHtml(t){
+  var dates=[],mp=[],hp=[],ok=0,n=0,ib=0,none=0,other=0,noTax=0,noTaxStarted=0,shared=0,inc=0;
+  var shareCodes={bank_dup:1,mail_dup:1,person_dup:1};
+  rows.forEach(function(r,i){if(!r.inc)return;inc++;var res=results[i],v=res.v;
+    if(v.anstdatum)dates.push(v.anstdatum);
+    if(v.lon>0){(v.hourly?hp:mp).push(v.lon)}
+    if(v.bankiban)ib++;else if(v.bankkonto){n++;if(v.bankOk)ok++;else other++}else none++;
+    if(!v.skattetabell){noTax++;if(v.anstdatum&&dayDiff(v.anstdatum,impDate)<=0)noTaxStarted++}
+    res.iss.forEach(function(x){if(shareCodes[x.code])shared++})});
+  dates.sort();
+  function row(flag,k,val){return '<div class="sr'+(flag?' flag':'')+'"><span class="mk">'+(flag?'!':'✓')+'</span><span class="sk">'+esc(k)+'</span><span class="sv">'+val+'</span></div>'}
+  var h='<div class="sh">'+esc(t.snH)+'</div>';
+  if(dates.length)h+=row(false,t.snStart,esc(t.snStartV(dates[0],dates[dates.length-1])));
+  var pay=[];if(mp.length)pay.push(esc(t.snPayM(mp.length,money(Math.min.apply(null,mp)),money(median(mp)),money(Math.max.apply(null,mp)))));
+  if(hp.length)pay.push(esc(t.snPayH(hp.length,num(Math.min.apply(null,hp)),num(median(hp)),num(Math.max.apply(null,hp)))));
+  if(pay.length)h+=row(false,t.snPay,pay.join('<br>'));
+  h+=row(other>0||none>0,t.snBank,esc(t.snBankV(ok,n,ib,none,other)));
+  h+=row(shared>0,t.snShare,esc(shared?t.snShareSome(shared):t.snShareNone));
+  h+=row(noTaxStarted>0,t.snTax,esc(noTax?t.snTaxSome(noTax,inc,noTaxStarted):t.snTaxNone));
+  return h}
 function renderTotals(){
   var t=T(),c=counts(),clear=c.tot>0&&c.e+c.w===0,sum=0,m=0,h=0,p=0,s=0,x=0;
   rows.forEach(function(r,i){if(!r.inc){x++;return}var v=results[i].v;if(!clear)return;
@@ -605,6 +740,7 @@ function renderTotals(){
   var sec=$('secC');sec.classList.toggle('locked',!clear);
   function tile(n,l,key){return '<div class="tile'+(key?' key':'')+'"><b>'+esc(n)+'</b><span>'+esc(l)+'</span></div>'}
   $('tiles').innerHTML=clear?tile(c.tot,t.t_n,1)+tile(money(sum),t.t_sum,1)+tile(m,t.t_m)+tile(h,t.t_h)+tile(p,t.t_p)+tile(s,t.t_s)+tile(x,t.t_x):tile('–',t.t_n)+tile('–',t.t_sum);
+  $('sanity').hidden=!clear;if(clear)$('sanity').innerHTML=sanityHtml(t);
   $('lblConfirm').textContent=clear?t.confirm(c.tot,money(sum)):t.confirm('–','–');
   $('chkConfirm').disabled=!clear;if(!clear)$('chkConfirm').checked=false;
   var ready=clear&&$('chkConfirm').checked;
