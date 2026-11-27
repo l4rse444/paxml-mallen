@@ -167,7 +167,7 @@ footer{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
     <p class="muted" style="font-size:12px" id="pImp"></p>
     <div id="banner"></div>
     <div class="issues" id="issues"></div>
-    <div class="row"><button type="button" class="btn" id="bReport" hidden></button></div>
+    <div class="row"><button type="button" class="btn" id="bExclErr" hidden></button><button type="button" class="btn" id="bReport" hidden></button></div>
     <div class="row" style="justify-content:space-between">
       <label class="row" style="gap:8px;min-height:40px"><input type="checkbox" id="onlyProblems"><span id="lblOnly" style="font-weight:500"></span></label>
       <span class="muted" style="font-size:12px" id="shown"></span>
@@ -209,6 +209,7 @@ var S={
   lblPaste:'Eller klistra in tabellen (Ctrl+V från Excel, med rubrikraden)',
   check:'Kontrollera listan',sample:'Prova med exempeldata (14 påhittade anställda)',tmpl:'Spara tom mall (.csv)',clear:'Rensa',
   listBtn:'Ladda ner listan med dina rättelser (.csv)',listSaved:'Listan sparades i din hämtningsmapp. Den kan släppas in här igen.',listCols:['Status','Med i filen'],listOk:'OK',listYes:'Ja',listNo:'Nej',
+  exclErrAll:function(n){return 'Utelämna alla '+n+(n===1?' rad med fel':' rader med fel')},repExcl:'Utelämnad',snExcl:'Utelämnade',snExclV:function(n,names){return n+(n===1?' person är inte med i filen: ':' personer är inte med i filen: ')+names+'. Rätta och importera dem separat.'},
   snH:'Rimlighetskontroll',snStart:'Startdatum',snPay:'Lön',snBank:'Bankkonton',snShare:'Dubbletter',snTax:'Skattetabell',
   snStartV:function(a,b){return 'Äldst '+a+' · nyast '+b},snPayM:function(n,lo,md,hi){return 'Månadslön ('+n+'): lägst '+lo+' · mitt '+md+' · högst '+hi},snPayH:function(n,lo,md,hi){return 'Timlön ('+n+'): lägst '+lo+' · mitt '+md+' · högst '+hi},
   snBankV:function(ok,n,iban,none,other){return ok+' av '+n+' kontrollerade mot bankens kontrollsiffra'+(iban?' · '+iban+' IBAN':'')+(other?' · '+other+' ej kontrollerade':'')+(none?' · '+none+' utan bankuppgifter':'')},
@@ -295,6 +296,7 @@ var S={
   lblPaste:'Or paste the table (Ctrl+V from Excel, with the header row)',
   check:'Check the list',sample:'Try example data (14 made-up employees)',tmpl:'Save blank template (.csv)',clear:'Clear',
   listBtn:'Download the list with your corrections (.csv)',listSaved:'The list was saved in your downloads folder. You can drop it here again.',listCols:['Status','Included in file'],listOk:'OK',listYes:'Yes',listNo:'No',
+  exclErrAll:function(n){return 'Leave out all '+n+(n===1?' row with errors':' rows with errors')},repExcl:'Left out',snExcl:'Left out',snExclV:function(n,names){return n+(n===1?' person is not in the file: ':' people are not in the file: ')+names+'. Fix and import them separately.'},
   snH:'Sanity check',snStart:'Start dates',snPay:'Pay',snBank:'Bank accounts',snShare:'Duplicates',snTax:'Tax table',
   snStartV:function(a,b){return 'Earliest '+a+' · latest '+b},snPayM:function(n,lo,md,hi){return 'Monthly pay ('+n+'): lowest '+lo+' · middle '+md+' · highest '+hi},snPayH:function(n,lo,md,hi){return 'Hourly pay ('+n+'): lowest '+lo+' · middle '+md+' · highest '+hi},
   snBankV:function(ok,n,iban,none,other){return ok+' of '+n+' checked against the bank check digit'+(iban?' · '+iban+' IBAN':'')+(other?' · '+other+' not checked':'')+(none?' · '+none+' without bank details':'')},
@@ -681,14 +683,16 @@ function renderIssues(){
     var title=(t.et[code]||code)+(code==='need'?': '+colLabel(col):'');
     var li=L.map(function(q){var nm=((q.res.v.fornamn||'')+' '+(q.res.v.efternamn||'')).trim(),det=q.x.p.v!==undefined&&q.x.p.v!==''?' <span class="muted">· '+esc(q.x.p.v)+'</span>':'';
       return '<li><button type="button" class="link" data-goto="c-'+q.r.id+'-'+q.x.col+'">'+esc(t.row+' '+q.res.rowNo+' · '+nm)+'</button>'+det+'</li>'}).join('');
-    return '<div class="issue err group"><div class="txt"><span class="tag">'+t.err+'</span><b>'+esc(title)+' · '+esc(t.nrows(n))+'</b><details'+(n<=3?' open':'')+'><summary>'+esc(t.showRows(n))+'</summary><ul class="gl">'+li+'</ul></details></div></div>'});
+    return '<div class="issue err group"><div class="txt"><span class="tag">'+t.err+'</span><b>'+esc(title)+' · '+esc(t.nrows(n))+'</b><details'+(n<=3?' open':'')+'><summary>'+esc(t.showRows(n))+'</summary><ul class="gl">'+li+'</ul></details></div><div class="gact"><button type="button" class="btn" data-excerr="'+esc(ek)+'">'+esc(t.exclAll(n))+'</button></div></div>'});
   var g=order.map(function(code){var L=groups[code],n=L.length,showV={lon_sane:1,slut_past:1,epost:1,bank_fmt:1,clr_fmt:1,bank_chk:1,bank_len:1,clr_unk:1,clr_five:1,lon_batch:1,start_old:1,start_far:1,pnr_fake:1};
     var li=L.map(function(q){var nm=((q.res.v.fornamn||'')+' '+(q.res.v.efternamn||'')).trim(),det=showV[code]&&q.x.p.v!==undefined?' <span class="muted">· '+esc(q.x.p.v)+'</span>':'';
       return '<li><button type="button" class="link" data-goto="c-'+q.r.id+'-'+q.x.col+'">'+esc(t.row+' '+q.res.rowNo+' · '+nm)+'</button>'+det+(code==='slut_past'?' <button type="button" class="link" data-exc="'+q.r.id+'">'+esc(t.exclRow)+'</button>':'')+'</li>'}).join('');
     var acts='<button type="button" class="btn" data-ackgroup="'+code+'">'+esc(code==='slut_past'?t.keepAll(n):t.ackAll(n))+'</button>'+(code==='slut_past'?'<button type="button" class="btn" data-excgroup="'+code+'">'+esc(t.exclAll(n))+'</button>':'');
     return '<div class="issue warn group"><div class="txt"><span class="tag">'+t.warn+'</span><b>'+esc(t.gt[code])+' · '+esc(t.nrows(n))+'</b><div>'+esc(t.gh[code])+'</div><details'+(n<=3?' open':'')+'><summary>'+esc(t.showRows(n))+'</summary><ul class="gl">'+li+'</ul></details></div><div class="gact">'+acts+'</div></div>'}).join('');
   $('issues').innerHTML=uh+h.join('')+g;
-  $('bReport').hidden=!(uh||h.length||g)}
+  var errRows=0,exclAny=false;rows.forEach(function(r,i){var res=results[i];if(!r.inc){if(res.iss.some(function(x){return x.lvl==='e'||!x.acked}))exclAny=true;return}if(res.iss.some(function(x){return x.lvl==='e'}))errRows++});
+  $('bReport').hidden=!(uh||h.length||g||exclAny);
+  $('bExclErr').hidden=!errRows;$('bExclErr').textContent=t.exclErrAll(errRows)}
 function cellHtml(r,k,w){return '<td style="min-width:'+w+'px"><input type="text" id="c-'+r.id+'-'+k+'" data-r="'+r.id+'" data-k="'+k+'" value="'+esc(r.raw[k])+'" autocomplete="off" spellcheck="false" aria-label="'+esc(colLabel(k))+'"><div class="norm" id="n-'+r.id+'-'+k+'"></div></td>'}
 function renderTable(){
   var t=T(),only=$('onlyProblems').checked,shown=0;
@@ -731,6 +735,8 @@ function sanityHtml(t){
   if(pay.length)h+=row(false,t.snPay,pay.join('<br>'));
   h+=row(other>0||none>0,t.snBank,esc(t.snBankV(ok,n,ib,none,other)));
   h+=row(shared>0,t.snShare,esc(shared?t.snShareSome(shared):t.snShareNone));
+  var ex=[];rows.forEach(function(r,i){if(!r.inc)ex.push(((results[i].v.fornamn||r.raw.fornamn||'')+' '+(results[i].v.efternamn||r.raw.efternamn||'')).trim()||('#'+results[i].rowNo))});
+  if(ex.length)h+=row(true,t.snExcl,esc(t.snExclV(ex.length,ex.slice(0,6).join(', ')+(ex.length>6?' …':''))));
   h+=row(noTaxStarted>0,t.snTax,esc(noTax?t.snTaxSome(noTax,inc,noTaxStarted):t.snTaxNone));
   return h}
 function renderTotals(){
@@ -858,6 +864,8 @@ document.addEventListener('change',function(e){
   else if(el.id==='impDate'){impDate=el.value||todayStr();refresh(true)}});
 function eachWarn(code,fn){rows.forEach(function(r,i){if(!r.inc)return;results[i].iss.forEach(function(x){if(x.lvl==='w'&&x.code===code&&!x.acked)fn(r,x)})})}
 document.addEventListener('click',function(e){
+  var be=e.target.closest&&e.target.closest('[data-excerr]');
+  if(be){var key=be.dataset.excerr;rows.forEach(function(r,i){if(!r.inc)return;if(results[i].iss.some(function(x){return x.lvl==='e'&&(x.code+(x.code==='need'?':'+x.col:''))===key}))r.inc=false});refresh(true);return}
   var bt=e.target.closest&&e.target.closest('[data-ackgroup],[data-excgroup],[data-exc]');
   if(bt){
     if(bt.dataset.ackgroup){eachWarn(bt.dataset.ackgroup,function(r,x){acks[x.id]=true});refresh(true)}
@@ -869,10 +877,11 @@ document.addEventListener('click',function(e){
 function csvCell(v){v=String(v==null?'':v).replace(/\r?\n/g,' ');if(/^[=+\-@\t]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'}
 function buildReport(){
   var t=T(),out=[t.repCols.map(csvCell).join(';')];
-  rows.forEach(function(r,i){if(!r.inc)return;var res=results[i],nm=((res.v.fornamn||r.raw.fornamn||'')+' '+(res.v.efternamn||r.raw.efternamn||'')).trim();
+  rows.forEach(function(r,i){var res=results[i],nm=((res.v.fornamn||r.raw.fornamn||'')+' '+(res.v.efternamn||r.raw.efternamn||'')).trim();
     res.iss.forEach(function(x){
+      if(!r.inc&&x.lvl==='w'&&x.acked)return;
       var msg=t.m[x.code]?t.m[x.code](x.p):(t.et[x.code]||t.gt[x.code]||x.code);
-      out.push([x.lvl==='e'?t.err:t.warn,res.rowNo,r.raw.anstnr||'',nm,colLabel(x.col),msg,r.raw[x.col]||'',x.lvl==='e'?t.repOpen:(x.acked?t.repAck:t.repOpen)].map(csvCell).join(';'))})});
+      out.push([x.lvl==='e'?t.err:t.warn,res.rowNo,r.raw.anstnr||'',nm,colLabel(x.col),msg,r.raw[x.col]||'',!r.inc?t.repExcl:(x.lvl==='e'?t.repOpen:(x.acked?t.repAck:t.repOpen))].map(csvCell).join(';'))})});
   return '\uFEFF'+out.join('\r\n')+'\r\n'}
 async function saveCsv(name,data){
   var dl=await getDl();
@@ -884,6 +893,7 @@ function buildList(){
     st=bad?res.iss.filter(function(x){return x.lvl==='e'||!x.acked}).map(function(x){return (x.lvl==='e'?t.err:t.warn)+': '+colLabel(x.col)}).join(', '):t.listOk;
     out.push(KEYS.map(function(k){return r.raw[k]}).concat([st,r.inc?t.listYes:t.listNo]).map(csvCell).join(';'))});
   return '\uFEFF'+out.join('\r\n')+'\r\n'}
+$('bExclErr').onclick=function(){rows.forEach(function(r,i){if(r.inc&&results[i].iss.some(function(x){return x.lvl==='e'}))r.inc=false});refresh(true)};
 $('bList').onclick=async function(){var t=T();try{await saveCsv('personallista_'+todayStr()+'.csv',buildList());$('toastA').textContent=t.listSaved}catch(e){}};
 $('bReport').onclick=async function(){
   var t=T(),name='felrapport_'+todayStr()+'.csv',data=buildReport(),dl=await getDl();
