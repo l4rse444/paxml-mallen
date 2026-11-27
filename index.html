@@ -157,6 +157,7 @@ footer{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
     <p class="muted" style="font-size:12px" id="pImp"></p>
     <div id="banner"></div>
     <div class="issues" id="issues"></div>
+    <div class="row"><button type="button" class="btn" id="bReport" hidden></button></div>
     <div class="row" style="justify-content:space-between">
       <label class="row" style="gap:8px;min-height:40px"><input type="checkbox" id="onlyProblems"><span id="lblOnly" style="font-weight:500"></span></label>
       <span class="muted" style="font-size:12px" id="shown"></span>
@@ -195,6 +196,7 @@ var S={
   hA:'Lägg in personallistan',noteTest:'Testversion. Använd bara påhittad data här. Filen är inte testad mot Fortnox ännu.',
   lblPaste:'Eller klistra in tabellen (Ctrl+V från Excel, med rubrikraden)',
   check:'Kontrollera listan',sample:'Prova med exempeldata (14 påhittade anställda)',tmpl:'Spara tom mall (.csv)',clear:'Rensa',
+  report:'Ladda ner felrapport (.csv)',repCols:['Typ','Rad','Anst.nr','Namn','Fält','Problem','Värde i listan','Status'],repAck:'Bekräftad',repOpen:'Öppen',repSaved:'Felrapporten sparades i din hämtningsmapp.',
   chooseFile:'Släpp en fil här eller klicka för att välja',dropHint:'Excel (.xlsx), CSV eller TSV',dropHere:'Släpp filen här',fileRead:function(n){return 'Läste in '+n+'.'},fileBad:'Filen kunde inte läsas. Använd en Excel- (.xlsx), CSV-, TSV- eller textfil.',fileXls:'Det här filformatet kan inte läsas. Spara om filen som .xlsx eller CSV (i Excel: Arkiv → Spara som) och släpp den här.',xlsRead:function(n,sh){return 'Läste in '+n+' (blad: '+sh+').'},
   hint:'Du kan släppa en Excel- eller CSV-fil i rutan, eller klistra in. Kolumnerna matchas på rubrikerna. Saknas rubrikrad används mallens ordning. Tab, semikolon och komma fungerar som avskiljare.',
   hB:'Rätta fel och bekräfta varningar',onlyP:'Visa bara rader med problem',legend:'Heldragen röd kant = fel. Streckad gul kant = varning. Texten under ett värde visar hur det skrivs i filen. Bocka ur "Med" för att lämna en rad utanför filen.',
@@ -261,6 +263,7 @@ var S={
   hA:'Add the staff list',noteTest:'Test version. Use made-up data only. The file has not been tested against Fortnox yet.',
   lblPaste:'Or paste the table (Ctrl+V from Excel, with the header row)',
   check:'Check the list',sample:'Try example data (14 made-up employees)',tmpl:'Save blank template (.csv)',clear:'Clear',
+  report:'Download error report (.csv)',repCols:['Type','Row','Employee no.','Name','Field','Problem','Value in the list','Status'],repAck:'Confirmed',repOpen:'Open',repSaved:'The error report was saved in your downloads folder.',
   chooseFile:'Drop a file here or click to browse',dropHint:'Excel (.xlsx), CSV or TSV',dropHere:'Drop the file here',fileRead:function(n){return 'Read '+n+'.'},fileBad:'The file could not be read. Use an Excel (.xlsx), CSV, TSV or text file.',fileXls:'This file format cannot be read. Save the file again as .xlsx or CSV (in Excel: File → Save as) and drop it here.',xlsRead:function(n,sh){return 'Read '+n+' (sheet: '+sh+').'},
   hint:'You can drop an Excel or CSV file onto the box, or paste. Columns are matched on the headers. Without a header row the template order is used. Tab, semicolon and comma all work as separators.',
   hB:'Fix errors and confirm warnings',onlyP:'Show only rows with problems',legend:'Solid red border = error. Dashed yellow border = warning. The text under a value shows how it is written to the file. Untick "Incl." to leave a row out of the file.',
@@ -526,7 +529,7 @@ function setStatic(){
   $('pillTest').textContent=t.test;$('pillTarget').textContent=t.target;$('offline').textContent=t.offline;
   $('lsv').setAttribute('aria-pressed',LANG==='sv');$('len').setAttribute('aria-pressed',LANG==='en');
   $('hA').textContent=t.hA;$('noteTest').textContent=t.noteTest;$('lblPaste').textContent=t.lblPaste;
-  $('bCheck').textContent=t.check;$('dropTitle').textContent=t.chooseFile;$('dropHint').textContent=t.dropHint;$('bSample').textContent=t.sample;$('bTemplate').textContent=t.tmpl;$('bClear').textContent=t.clear;$('pHint').textContent=t.hint;
+  $('bCheck').textContent=t.check;$('bReport').textContent=t.report;$('dropTitle').textContent=t.chooseFile;$('dropHint').textContent=t.dropHint;$('bSample').textContent=t.sample;$('bTemplate').textContent=t.tmpl;$('bClear').textContent=t.clear;$('pHint').textContent=t.hint;
   $('hB').textContent=t.hB;$('lblImp').textContent=t.lblImp;$('pImp').textContent=t.pImp;$('impDate').value=impDate;$('lblOnly').textContent=t.onlyP;$('legend').textContent=t.legend;
   $('hC').textContent=t.hC;$('pC').textContent=t.pC;$('bSave').textContent=t.save;$('bCopy').textContent=t.copy;$('sumXml').textContent=t.sumXml;$('pLimits').textContent=t.limits;$('foot').textContent=t.foot}
 function renderSteps(){
@@ -566,7 +569,8 @@ function renderIssues(){
       return '<li><button type="button" class="link" data-goto="c-'+q.r.id+'-'+q.x.col+'">'+esc(t.row+' '+q.res.rowNo+' · '+nm)+'</button>'+det+(code==='slut_past'?' <button type="button" class="link" data-exc="'+q.r.id+'">'+esc(t.exclRow)+'</button>':'')+'</li>'}).join('');
     var acts='<button type="button" class="btn" data-ackgroup="'+code+'">'+esc(code==='slut_past'?t.keepAll(n):t.ackAll(n))+'</button>'+(code==='slut_past'?'<button type="button" class="btn" data-excgroup="'+code+'">'+esc(t.exclAll(n))+'</button>':'');
     return '<div class="issue warn group"><div class="txt"><span class="tag">'+t.warn+'</span><b>'+esc(t.gt[code])+' · '+esc(t.nrows(n))+'</b><div>'+esc(t.gh[code])+'</div><details'+(n<=3?' open':'')+'><summary>'+esc(t.showRows(n))+'</summary><ul class="gl">'+li+'</ul></details></div><div class="gact">'+acts+'</div></div>'}).join('');
-  $('issues').innerHTML=uh+h.join('')+g}
+  $('issues').innerHTML=uh+h.join('')+g;
+  $('bReport').hidden=!(uh||h.length||g)}
 function cellHtml(r,k,w){return '<td style="min-width:'+w+'px"><input type="text" id="c-'+r.id+'-'+k+'" data-r="'+r.id+'" data-k="'+k+'" value="'+esc(r.raw[k])+'" autocomplete="off" spellcheck="false" aria-label="'+esc(colLabel(k))+'"><div class="norm" id="n-'+r.id+'-'+k+'"></div></td>'}
 function renderTable(){
   var t=T(),only=$('onlyProblems').checked,shown=0;
@@ -723,6 +727,20 @@ document.addEventListener('click',function(e){
     return}
   var b=e.target.closest&&e.target.closest('[data-goto]');
   if(b){var inp=$(b.dataset.goto);if(!inp){ $('onlyProblems').checked=false;renderTable();inp=$(b.dataset.goto)}if(inp){inp.scrollIntoView({block:'center',inline:'center'});inp.focus()}}});
+function csvCell(v){v=String(v==null?'':v).replace(/\r?\n/g,' ');if(/^[=+\-@\t]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'}
+function buildReport(){
+  var t=T(),out=[t.repCols.map(csvCell).join(';')];
+  rows.forEach(function(r,i){if(!r.inc)return;var res=results[i],nm=((res.v.fornamn||r.raw.fornamn||'')+' '+(res.v.efternamn||r.raw.efternamn||'')).trim();
+    res.iss.forEach(function(x){
+      var msg=t.m[x.code]?t.m[x.code](x.p):(t.et[x.code]||t.gt[x.code]||x.code);
+      out.push([x.lvl==='e'?t.err:t.warn,res.rowNo,r.raw.anstnr||'',nm,colLabel(x.col),msg,r.raw[x.col]||'',x.lvl==='e'?t.repOpen:(x.acked?t.repAck:t.repOpen)].map(csvCell).join(';'))})});
+  return '\uFEFF'+out.join('\r\n')+'\r\n'}
+$('bReport').onclick=async function(){
+  var t=T(),name='felrapport_'+todayStr()+'.csv',data=buildReport(),dl=await getDl();
+  try{
+    if(dl){await dl.save({filename:name.replace(/\.csv$/,'.txt'),data:data})}
+    else{var bl=new Blob([data],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000)}
+    $('toastA').textContent=t.repSaved}catch(e){}};
 async function getDl(){try{return window.claude&&claude.use?await claude.use('downloads'):null}catch(e){return null}}
 $('bSave').onclick=async function(){
   var t=T(),dl=await getDl();
